@@ -38,6 +38,7 @@ android {
 }
 
 dependencies {
+    implementation 'androidx.viewpager2:viewpager2:1.0.0'
     def nav_version = "2.3.0"
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
@@ -59,5 +60,7 @@ dependencies {
     implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
     implementation "androidx.navigation:navigation-dynamic-features-fragment:$nav_version"
     implementation 'com.google.android.gms:play-services-location:17.0.0'
+    implementation 'com.google.android.material:material:1.1.0-alpha08'
+    implementation 'androidx.viewpager2:viewpager2:1.0.0-beta02'
     androidTestImplementation "androidx.navigation:navigation-testing:$nav_version"
 }
