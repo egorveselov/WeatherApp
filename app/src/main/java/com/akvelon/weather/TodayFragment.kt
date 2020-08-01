@@ -35,7 +35,7 @@ class TodayFragment : Fragment() {
         return view;
     }
 
-    private fun parseJsonResponse(response: String?) {
+    private fun updateUI(response: String?) {
         val jsonObject = JSONObject(response)
         val main = jsonObject.getJSONObject("main")
         val sys = jsonObject.getJSONObject("sys")
