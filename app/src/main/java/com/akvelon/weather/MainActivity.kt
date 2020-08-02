@@ -49,7 +49,7 @@ class MainActivity : FragmentActivity() {
         swipeRefresh = findViewById(R.id.swipeRefresh)
         swipeRefresh.setOnRefreshListener { WeatherRequestHandler().execute() }
 
-        TabLayoutMediator(tabLayout, viewPager, true) { tab, position ->
+        TabLayoutMediator(tabLayout, viewPager, false) { tab, position ->
             tab.text = tabTitles[position]
             viewPager.setCurrentItem(tab.position, true)
         }.attach()
@@ -61,7 +61,7 @@ class MainActivity : FragmentActivity() {
         override fun createFragment(position: Int): Fragment = when(position) {
             0 -> TodayFragment()
             1 -> TodayFragment()
-            2 -> TodayFragment()
+            2 -> WeekFragment()
             else -> TodayFragment()
         }
     }
