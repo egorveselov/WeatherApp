@@ -1,22 +1,36 @@
 package com.akvelon.weather
 
+import android.database.Cursor
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
+import kotlinx.android.synthetic.main.day_info.view.*
+import java.text.DateFormat
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.time.format.TextStyle
+import java.util.*
 
-class WeekFragment : Fragment() {
-    private val DAYS_NUMBER = 7
-
+class WeekFragment() : Fragment() {
+    private val DAYS_NUMBER = 8
     private lateinit var recyclerView: RecyclerView
     private lateinit var linearLayoutManager: LinearLayoutManager
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
+
+    companion object {
+        fun newInstance() = WeekFragment().apply {
+            arguments = Bundle()
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -35,6 +49,10 @@ class WeekFragment : Fragment() {
         return view
     }
 
+    fun updateUI() {
+        viewAdapter.notifyDataSetChanged()
+    }
+
     inner class CustomAdapter() : RecyclerView.Adapter<CustomAdapter.ViewHolder>() {
         inner class ViewHolder(view: MaterialCardView) : RecyclerView.ViewHolder(view)
 
@@ -47,6 +65,38 @@ class WeekFragment : Fragment() {
         override fun getItemCount(): Int = DAYS_NUMBER
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val card = holder.itemView as MaterialCardView
+            val info = WeatherDBWorker.getDataFromDB(
+                WeatherDBHelper.WeekWeather.columns.first(),
+                LocalDate.now().plusDays(position.toLong()).toString(),
+                WeatherDBHelper.WeekWeather.columns.subList(1, WeatherDBHelper.WeekWeather.columns.size)
+            )
+            info?.let {
+                if (it.moveToFirst()) {
+                    val date = info.getString(0)
+                    card.tw_date.text = if (LocalDate.now().toString() == date) {
+                        "today"
+                    } else {
+                        with(LocalDate.parse(date)) {
+                            "${dayOfWeek.name.toLowerCase()}, $dayOfMonth ${
+                                month.getDisplayName(
+                                    TextStyle.SHORT,
+                                    Locale.ENGLISH
+                                ).toLowerCase()
+                            }"
+                        }
+                    }
+
+                    card.tw_state.text = info.getString(20)
+                    card.tw_day.text = "Day ${info.getString(3)}°"
+                    card.tw_night.text = "Night ${info.getString(6)}°"
+                    card.iw_weatherCondition.setImageResource(
+                        resources.getIdentifier(
+                            "weather_con_${info.getString(22)}", "drawable", context?.packageName
+                        )
+                    )
+                }
+            }
         }
     }
 }

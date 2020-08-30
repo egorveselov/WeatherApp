@@ -5,24 +5,33 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.provider.BaseColumns
 
-class WeatherDBHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
-    private val SQL_CREATE_ENTRIES =
-        "CREATE TABLE ${Weather.Entry.TABLE_NAME} (" +
-                "${Weather.Entry.ID} INTEGER PRIMARY KEY," +
-                "${Weather.Entry.COLUMN_DATE} TEXT," +
-                "${Weather.Entry.COLUMN_TEMP} TEXT," +
-                "${Weather.Entry.COLUMN_STATE} TEXT," +
-                "${Weather.Entry.COLUMN_PRESSURE} TEXT," +
-                "${Weather.Entry.COLUMN_HUMIDITY} TEXT);"
+class WeatherDBHelper(context: Context) :
+    SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
-    private val SQL_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${Weather.Entry.TABLE_NAME}"
+    private fun createTable(tableName: String, columns: List<String>) : String {
+        var resultQuery = "CREATE TABLE $tableName (${BaseColumns._ID} INTEGER PRIMARY KEY,"
+        for (index in columns.indices) {
+            resultQuery = when (index) {
+                columns.size - 1 -> {
+                    resultQuery.plus(columns[index]).plus(" TEXT)")
+                }
+                else -> {
+                    resultQuery.plus(columns[index]).plus(" TEXT,")
+                }
+            }
+        }
+
+        return resultQuery
+    }
 
     override fun onCreate(db: SQLiteDatabase?) {
-        db?.execSQL(SQL_CREATE_ENTRIES)
+        db?.execSQL(createTable(CurrentWeather.columns.first(), CurrentWeather.columns.subList(1, CurrentWeather.columns.size)))
+        db?.execSQL(createTable(WeekWeather.columns.first(), WeekWeather.columns.subList(1, WeekWeather.columns.size)))
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
-        db?.execSQL(SQL_DELETE_ENTRIES)
+        db?.execSQL("DROP TABLE IF EXISTS ${WeekWeather.columns.first()}")
+        db?.execSQL("DROP TABLE IF EXISTS ${CurrentWeather.columns.first()}")
         onCreate(db)
     }
 
@@ -31,19 +40,68 @@ class WeatherDBHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }
 
     companion object {
-        const val  DATABASE_VERSION = 1
-        const val  DATABASE_NAME = "Weather.db"
+        const val DATABASE_VERSION = 1
+        const val DATABASE_NAME = "Weather.db"
     }
 
-    object Weather {
-        object Entry {
-            const val TABLE_NAME = "weather"
-            const val COLUMN_DATE = "date"
-            const val COLUMN_TEMP = "temp"
-            const val COLUMN_STATE = "state"
-            const val COLUMN_PRESSURE = "pressure"
-            const val COLUMN_HUMIDITY = "humidity"
-            const val ID = BaseColumns._ID
-        }
+    object WeekWeather {
+        val columns = listOf<String>(
+            "week_weather",
+            "dt",
+            "sunrise",
+            "sunset",
+            "temp_day",
+            "temp_min",
+            "temp_max",
+            "temp_night",
+            "temp_eve",
+            "temp_morn",
+            "feels_like_day",
+            "feels_like_night",
+            "feels_like_eve",
+            "feels_like_morn",
+            "pressure",
+            "humidity",
+            "dew_point",
+            "wind_gust",
+            "wind_speed",
+            "wind_deg",
+            "id",
+            "main",
+            "description",
+            "icon",
+            "clouds",
+            "uvi",
+            "visibility",
+            "pop",
+            "rain",
+            "snow"
+        )
+    }
+
+    object CurrentWeather {
+        val columns = listOf<String>(
+            "current_weather",
+            "dt",
+            "sunrise",
+            "sunset",
+            "temp",
+            "feels_like",
+            "pressure",
+            "humidity",
+            "dew_point",
+            "uvi",
+            "clouds",
+            "visibility",
+            "wind_speed",
+            "wind_gust",
+            "wind_deg",
+            "rain",
+            "snow",
+            "id",
+            "main",
+            "description",
+            "icon"
+        )
     }
 }
