@@ -66,14 +66,10 @@ class WeekFragment() : Fragment() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val card = holder.itemView as MaterialCardView
-            val info = WeatherDBWorker.getDataFromDB(
-                WeatherDBHelper.WeekWeather.columns.first(),
-                LocalDate.now().plusDays(position.toLong()).toString(),
-                WeatherDBHelper.WeekWeather.columns.subList(1, WeatherDBHelper.WeekWeather.columns.size)
-            )
-            info?.let {
+            val cursor = WeatherDBWorker.getCursorDayOfWeek(LocalDate.now().plusDays(position.toLong()).toString())
+            cursor?.let {
                 if (it.moveToFirst()) {
-                    val date = info.getString(0)
+                    val date = cursor.getString(0)
                     card.tw_date.text = if (LocalDate.now().toString() == date) {
                         "today"
                     } else {
@@ -87,12 +83,12 @@ class WeekFragment() : Fragment() {
                         }
                     }
 
-                    card.tw_state.text = info.getString(20)
-                    card.tw_day.text = "Day ${info.getString(3)}°"
-                    card.tw_night.text = "Night ${info.getString(6)}°"
+                    card.tw_state.text = cursor.getString(20)
+                    card.tw_day.text = "Day ${cursor.getString(3)}°"
+                    card.tw_night.text = "Night ${cursor.getString(6)}°"
                     card.iw_weatherCondition.setImageResource(
                         resources.getIdentifier(
-                            "weather_con_${info.getString(22)}", "drawable", context?.packageName
+                            "weather_con_${cursor.getString(22)}", "drawable", context?.packageName
                         )
                     )
                 }

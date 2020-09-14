@@ -60,9 +60,6 @@ object WeatherDBWorker {
                             "temp_night" -> map[value] = getJSONObject("temp").getDouble("night").roundToInt().toString()
                             "temp_eve" -> map[value] = getJSONObject("temp").getDouble("eve").roundToInt().toString()
                             "temp_morn" -> map[value] = getJSONObject("temp").getDouble("morn").roundToInt().toString()
-                            "main" -> map[value] = getJSONArray("weather").getJSONObject(0).getString(value)
-                            "description" -> map[value] = getJSONArray("weather").getJSONObject(0).getString(value)
-                            "icon" -> map[value] = getJSONArray("weather").getJSONObject(0).getString(value)
                             else -> {
                                 map[value] = getString(value)
                             }
@@ -77,6 +74,18 @@ object WeatherDBWorker {
             insertDataIntoDB(map, WeatherDBHelper.WeekWeather.columns.first())
         }
     }
+
+    fun getCursorToday(): Cursor? = getDataFromDB(
+        WeatherDBHelper.CurrentWeather.columns.first(),
+        LocalDate.now().toString(),
+        WeatherDBHelper.CurrentWeather.columns.subList(1, WeatherDBHelper.CurrentWeather.columns.size)
+    )
+
+    fun getCursorDayOfWeek(day: String): Cursor? = getDataFromDB(
+        WeatherDBHelper.WeekWeather.columns.first(),
+        day,
+        WeatherDBHelper.WeekWeather.columns.subList(1, WeatherDBHelper.WeekWeather.columns.size)
+    )
 
     private fun insertDataIntoDB(map: MutableMap<String, String>, tableName: String) {
         if (!sqLiteDatabase.isReadOnly) {

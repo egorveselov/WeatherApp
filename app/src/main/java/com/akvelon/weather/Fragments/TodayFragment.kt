@@ -54,25 +54,15 @@ class TodayFragment() : Fragment() {
         return view;
     }
 
-    private fun getCursor(): Cursor? = WeatherDBWorker.getDataFromDB(
-        WeatherDBHelper.CurrentWeather.columns.first(),
-        LocalDate.now().toString(),
-        WeatherDBHelper.CurrentWeather.columns.subList(1, WeatherDBHelper.CurrentWeather.columns.size)
-    )
-
     fun updateUI() {
-        val info = WeatherDBWorker.getDataFromDB(
-            WeatherDBHelper.WeekWeather.columns.first(),
-            LocalDate.now().toString(),
-            WeatherDBHelper.WeekWeather.columns.subList(1, WeatherDBHelper.WeekWeather.columns.size)
-        )
-        info?.let {
+        WeatherDBWorker.getCursorDayOfWeek(LocalDate.now().toString())?.let {
             if(it.moveToFirst()) {
                 dayTemp.text = "Day ${it.getString(3)}°"
                 nightTemp.text = "Night ${it.getString(6)}°"
             }
         }
-        getCursor()?.let {
+        val cursorToday = WeatherDBWorker.getCursorToday()
+        cursorToday?.let {
             if (it.moveToFirst()) {
                 while (!it.isAfterLast) {
                     todayBackground.setImageResource(resources.getIdentifier("background_${it.getString(19)}", "drawable", context?.packageName))
