@@ -23,7 +23,7 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
     private lateinit var toolbar: Toolbar
     private val tabTitles = arrayOf("Today", "Tomorrow", "7 days")
     private val fragmentList: ArrayList<Fragment> = ArrayList()
-    private lateinit var savedTabColor: String
+    private var savedTabColor: String? = null
     private var previousTabPosition = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,7 +32,7 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
 
         WeatherDBWorker.sqLiteDatabase = WeatherDBHelper(this).writableDatabase
         WebRequest(this, getRequestString()).execute()
-
+        
         WeatherDBWorker.getCursorToday()?.let {
             if (it.moveToFirst()) {
                 savedTabColor = it.getString(19)
@@ -47,18 +47,20 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
 
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
-                when(position) {
-                    0 -> changeMainWindowColors(savedTabColor,
-                        if(previousTabPosition == 2) {
-                            savedTabColor
-                        } else { "2dn"}
-                    )
-                    1 -> changeMainWindowColors("2dn", savedTabColor)
-                    2 -> changeMainWindowColors(savedTabColor,
-                        if(previousTabPosition == 0) {
-                            savedTabColor
-                        } else { "2dn"}
-                    )
+                savedTabColor?.let {
+                    when(position) {
+                        0 -> changeMainWindowColors(it,
+                            if(previousTabPosition == 2) {
+                                it
+                            } else { "2dn"}
+                        )
+                        1 -> changeMainWindowColors("2dn", it)
+                        2 -> changeMainWindowColors(it,
+                            if(previousTabPosition == 0) {
+                                it
+                            } else { "2dn"}
+                        )
+                    }
                 }
                 previousTabPosition = position
                 super.onPageSelected(position)
@@ -75,7 +77,9 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
             viewPager.setCurrentItem(tab.position, true)
         }.attach()
 
-        changeMainWindowColors(savedTabColor, savedTabColor)
+        savedTabColor?.let {
+            changeMainWindowColors(it, it)
+        }
     }
 
     inner class CustomFragmentStateAdapter(activity: FragmentActivity) :
