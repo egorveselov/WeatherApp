@@ -1,13 +1,16 @@
 package com.akvelon.weather.fragments
 
 
+import android.content.Context
 import android.os.Bundle
+import android.view.Display
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import com.akvelon.weather.R
 import com.akvelon.weather.database.WeatherDBWorker
 import java.time.LocalDate
@@ -26,6 +29,7 @@ class TodayFragment() : Fragment() {
     private lateinit var nightTemp: TextView
     private lateinit var feelsLike: TextView
     private lateinit var todayBackground: ImageView
+    private lateinit var city: TextView
 
     companion object {
         fun newInstance() = TodayFragment().apply {
@@ -51,6 +55,7 @@ class TodayFragment() : Fragment() {
         nightTemp = view.findViewById(R.id.nightTemp)
         feelsLike = view.findViewById(R.id.feelsLike)
         todayBackground = view.findViewById(R.id.todayBackground)
+        city = view.findViewById(R.id.city)
         updateUI()
         return view;
     }
@@ -80,6 +85,7 @@ class TodayFragment() : Fragment() {
                     pressure.text = it.getString(5)
                     humidity.text = it.getString(6)
                     feelsLike.text = "Feels like ${it.getString(4)}°"
+                    city.text = activity?.getPreferences(Context.MODE_PRIVATE)?.getString("city", "Moscow")
                     break
                 }
             }

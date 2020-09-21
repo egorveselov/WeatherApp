@@ -39,6 +39,7 @@ object WeatherDBWorker {
         }
 
         clearDataFromDB(WeatherDBHelper.CurrentWeather.columns.first())
+        clearDataFromDB(WeatherDBHelper.WeekWeather.columns.first())
         insertDataIntoDB(map, WeatherDBHelper.CurrentWeather.columns.first())
 
         return map["icon"];

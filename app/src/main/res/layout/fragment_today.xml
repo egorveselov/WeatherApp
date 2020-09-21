@@ -92,7 +92,7 @@
 
 
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/city"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Moscow"
@@ -112,8 +112,8 @@
         android:layout_height="2dp"
         android:layout_marginTop="12dp"
         android:background="@android:color/darker_gray"
-        app:layout_constraintStart_toStartOf="@+id/textView"
-        app:layout_constraintTop_toBottomOf="@+id/textView" />
+        app:layout_constraintStart_toStartOf="@+id/city"
+        app:layout_constraintTop_toBottomOf="@+id/city" />
 
     <TextView
         android:id="@+id/currentDay"

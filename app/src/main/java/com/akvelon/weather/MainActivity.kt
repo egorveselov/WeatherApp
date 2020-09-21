@@ -2,6 +2,7 @@ package com.akvelon.weather
 
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.widget.Toast
 import android.widget.Toolbar
@@ -13,9 +14,16 @@ import androidx.viewpager2.widget.ViewPager2
 import com.akvelon.weather.database.*
 import com.akvelon.weather.fragments.*
 import com.akvelon.weather.web.*
+import com.google.android.gms.common.api.Status
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import org.json.JSONObject
+import java.util.*
+import kotlin.collections.ArrayList
 
 
 class MainActivity : FragmentActivity(), IWebRequestHandler {
@@ -34,7 +42,8 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         setContentView(R.layout.activity_main)
 
         WeatherDBWorker.sqLiteDatabase = WeatherDBHelper(this).writableDatabase
-        WebRequest(this, getRequestString()).execute()
+        val citty = getLocation("city")
+        WebRequest(this, getRequestString(getLocation("lat"), getLocation("lon"))).execute()
         
         WeatherDBWorker.getCursorToday()?.let {
             if (it.moveToFirst()) {
@@ -72,13 +81,33 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
 
         tabLayout = findViewById(R.id.tabLayout)
         swipeRefresh = findViewById(R.id.swipeRefresh)
-        swipeRefresh.setOnRefreshListener { WebRequest(this, getRequestString()).execute() }
+        swipeRefresh.setOnRefreshListener { WebRequest(this, getRequestString(getLocation("lat"), getLocation("lon"))).execute() }
         toolbar = findViewById(R.id.toolBar)
 
         TabLayoutMediator(tabLayout, viewPager, false) { tab, position ->
             tab.text = tabTitles[position]
             viewPager.setCurrentItem(tab.position, true)
         }.attach()
+
+        if (!Places.isInitialized()) {
+            Places.initialize(applicationContext, getString(R.string.PLACES_APP_KEY), Locale.US);
+        }
+
+        val autocompleteFragment = supportFragmentManager.findFragmentById(R.id.autocomplete_fragment) as AutocompleteSupportFragment
+        autocompleteFragment.setPlaceFields(listOf(Place.Field.ID,Place.Field.NAME, Place.Field.LAT_LNG))
+        autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
+            override fun onPlaceSelected(place: Place) {
+                val lat = place.latLng?.latitude.toString()
+                val lon = place.latLng?.longitude.toString()
+
+                saveLocation(lat, lon, place.name)
+                WebRequest(this@MainActivity, getRequestString(lat, lon)).execute()
+            }
+
+            override fun onError(p0: Status) {
+                Toast.makeText(this@MainActivity, R.string.update_error, Toast.LENGTH_SHORT).show()
+            }
+        })
 
         savedTabColor?.let {
             changeMainWindowColors(it, it)
@@ -104,7 +133,7 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
             }
     }
 
-    private fun getRequestString(lat: String = "55.751244", lon: String = "37.618423"): String {
+    private fun getRequestString(lat: String? = "55.751244", lon: String? = "37.618423"): String {
         return "${String.format(getString(R.string.URL), lat, lon) + getString(R.string.APP_ID)}"
     }
 
@@ -112,6 +141,7 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         swipeRefresh.isRefreshing = false
         response?.let { resp ->
             JSONObject(resp).let {
+                val colorId = WeatherDBWorker.setCurrentWeather(it.getJSONObject("current"))
                 WeatherDBWorker.setWeekWeather(it.getJSONArray("daily"))
 
                 for (fragment in 0 until fragmentList.size) {
@@ -121,7 +151,6 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
                         2 -> (fragmentList[2] as WeekFragment).updateUI()
                     }
                 }
-                val colorId = WeatherDBWorker.setCurrentWeather(it.getJSONObject("current"))
                 colorId?.let {
                     savedTabColor = colorId
                     if(viewPager.currentItem == 1) {
@@ -152,6 +181,25 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
             toolbar.setBackgroundColor(animator.animatedValue as Int)
         }
         colorAnimation.start()
+    }
 
+    private fun saveLocation(lat: String, lon: String, city: String?) {
+        val sharedPreferences = getPreferences(MODE_PRIVATE)
+        with(sharedPreferences.edit()) {
+            putString("lat", lat)
+            putString("lon", lon)
+            putString("city", city)
+            commit()
+        }
+    }
+
+    private fun getLocation(parameter: String): String? {
+        val sharedPreferences = getPreferences(MODE_PRIVATE)
+        return when(parameter) {
+            "lat" -> sharedPreferences.getString("lat", "55.751244")
+            "lon" -> sharedPreferences.getString("lon", "37.618423")
+            "city" -> sharedPreferences.getString("city", "Moscow")
+            else -> null
+        }
     }
 }
