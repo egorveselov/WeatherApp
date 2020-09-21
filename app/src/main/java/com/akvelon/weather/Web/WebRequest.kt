@@ -1,4 +1,4 @@
-package com.akvelon.weather
+package com.akvelon.weather.web
 
 import android.os.AsyncTask
 import java.net.URL

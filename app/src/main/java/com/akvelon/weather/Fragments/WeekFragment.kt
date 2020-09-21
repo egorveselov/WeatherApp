@@ -1,7 +1,6 @@
-package com.akvelon.weather
+package com.akvelon.weather.fragments
 
-import android.database.Cursor
-import android.graphics.drawable.Drawable
+
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,14 +8,11 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.akvelon.weather.R
+import com.akvelon.weather.database.WeatherDBWorker
 import com.google.android.material.card.MaterialCardView
 import kotlinx.android.synthetic.main.day_info.view.*
-import java.text.DateFormat
-import java.text.SimpleDateFormat
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.*
 

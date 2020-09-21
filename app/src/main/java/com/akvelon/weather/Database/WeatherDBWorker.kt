@@ -1,4 +1,4 @@
-package com.akvelon.weather
+package com.akvelon.weather.database
 
 import android.content.ContentValues
 import android.database.Cursor

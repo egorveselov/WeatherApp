@@ -1,4 +1,4 @@
-package com.akvelon.weather
+package com.akvelon.weather.fragments
 
 import android.database.Cursor
 import android.os.Bundle
@@ -8,6 +8,8 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import com.akvelon.weather.R
+import com.akvelon.weather.database.*
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.*

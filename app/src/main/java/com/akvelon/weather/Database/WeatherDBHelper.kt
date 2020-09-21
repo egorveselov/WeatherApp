@@ -1,4 +1,4 @@
-package com.akvelon.weather
+package com.akvelon.weather.database
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
