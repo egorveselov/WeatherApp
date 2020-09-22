@@ -8,6 +8,7 @@ import android.widget.Toast
 import android.widget.Toolbar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.FragmentManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
@@ -36,6 +37,7 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
     private val fragmentList: ArrayList<Fragment> = ArrayList()
     private var savedTabColor: String? = null
     private var previousTabPosition = 0
+    private var needToBackPressed = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -104,12 +106,20 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
             }
 
             override fun onError(p0: Status) {
-                Toast.makeText(this@MainActivity, R.string.update_error, Toast.LENGTH_SHORT).show()
+                needToBackPressed = false
             }
         })
 
         savedTabColor?.let {
             changeMainWindowColors(it, it)
+        }
+    }
+
+    override fun onBackPressed() {
+        if(needToBackPressed) {
+            super.onBackPressed()
+        } else {
+            needToBackPressed = true
         }
     }
 
