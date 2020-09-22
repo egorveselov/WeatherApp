@@ -42,7 +42,6 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         setContentView(R.layout.activity_main)
 
         WeatherDBWorker.sqLiteDatabase = WeatherDBHelper(this).writableDatabase
-        val citty = getLocation("city")
         WebRequest(this, getRequestString(getLocation("lat"), getLocation("lon"))).execute()
         
         WeatherDBWorker.getCursorToday()?.let {

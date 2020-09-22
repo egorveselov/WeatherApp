@@ -67,8 +67,8 @@ class TodayFragment() : Fragment() {
                 nightTemp.text = "Night ${it.getString(6)}°"
             }
         }
-        val cursorToday = WeatherDBWorker.getCursorToday()
-        cursorToday?.let {
+
+        WeatherDBWorker.getCursorToday()?.let {
             if (it.moveToFirst()) {
                 while (!it.isAfterLast) {
                     todayBackground.setImageResource(resources.getIdentifier("background_${it.getString(19)}", "drawable", context?.packageName))
