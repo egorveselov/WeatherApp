@@ -12,7 +12,7 @@
         android:layout_height="match_parent"
         android:adjustViewBounds="true"
         android:scaleType="fitXY"
-        android:src="@drawable/backgound_01d"
+        android:src="@drawable/background_01d"
         tools:layout_editor_absoluteX="0dp"
         tools:layout_editor_absoluteY="-28dp">
 
