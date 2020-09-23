@@ -9,4 +9,7 @@
     <string name="URL" formatted="false">https://api.openweathermap.org/data/2.5/onecall?lat=%s&amp;lon=%s&amp;units=metric&amp;exclude=hourly&amp;appid=</string>
     <string name="APP_ID">a0f70c8a7410e976dcecbfd5ba3ee4ed</string>
     <string name="PLACES_APP_KEY">AIzaSyDisx9jdhL_kQnRPChnNMAZOWE8wnWJV-8</string>
+    <string name="Today">Today</string>
+    <string name="Tomorrow">Tomorrow</string>
+    <string name="Week">7 days</string>
 </resources>

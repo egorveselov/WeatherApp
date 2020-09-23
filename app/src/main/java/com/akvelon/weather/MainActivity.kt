@@ -1,11 +1,16 @@
 package com.akvelon.weather
 
+import android.Manifest
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
+import android.location.Location
 import android.os.Bundle
 import android.widget.Toast
 import android.widget.Toolbar
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
@@ -16,12 +21,18 @@ import com.akvelon.weather.database.*
 import com.akvelon.weather.fragments.*
 import com.akvelon.weather.web.*
 import com.google.android.gms.common.api.Status
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.FetchPlaceRequest
+import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest
+import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import kotlinx.android.synthetic.main.fragment_today.*
 import org.json.JSONObject
 import java.util.*
 import kotlin.collections.ArrayList
@@ -33,19 +44,19 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
     private lateinit var tabLayout: TabLayout
     private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var toolbar: Toolbar
-    private val tabTitles = arrayOf("Today", "Tomorrow", "7 days")
     private val fragmentList: ArrayList<Fragment> = ArrayList()
     private var savedTabColor: String? = null
     private var previousTabPosition = 0
     private var needToBackPressed = true
+    private val REQUEST_CODE = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        checkPermissions()
 
         WeatherDBWorker.sqLiteDatabase = WeatherDBHelper(this).writableDatabase
-        WebRequest(this, getRequestString(getLocation("lat"), getLocation("lon"))).execute()
-        
+
         WeatherDBWorker.getCursorToday()?.let {
             if (it.moveToFirst()) {
                 savedTabColor = it.getString(19)
@@ -60,23 +71,21 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
 
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
-                savedTabColor?.let {
+                super.onPageSelected(position)
+                savedTabColor?.let { colorId ->
+                    val oldColorId = when(previousTabPosition) {
+                        0 -> colorId
+                        2 -> colorId
+                        else -> ""
+                    }
+
                     when(position) {
-                        0 -> changeMainWindowColors(it,
-                            if(previousTabPosition == 2) {
-                                it
-                            } else { "2dn"}
-                        )
-                        1 -> changeMainWindowColors("2dn", it)
-                        2 -> changeMainWindowColors(it,
-                            if(previousTabPosition == 0) {
-                                it
-                            } else { "2dn"}
-                        )
+                        0 -> changeMainWindowColors(colorId, oldColorId)
+                        1 -> changeMainWindowColors("", colorId)
+                        2 -> changeMainWindowColors(colorId, oldColorId)
                     }
                 }
                 previousTabPosition = position
-                super.onPageSelected(position)
             }
         })
 
@@ -85,6 +94,7 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         swipeRefresh.setOnRefreshListener { WebRequest(this, getRequestString(getLocation("lat"), getLocation("lon"))).execute() }
         toolbar = findViewById(R.id.toolBar)
 
+        val tabTitles = arrayOf(getString(R.string.Today), getString(R.string.Tomorrow), getString(R.string.Week))
         TabLayoutMediator(tabLayout, viewPager, false) { tab, position ->
             tab.text = tabTitles[position]
             viewPager.setCurrentItem(tab.position, true)
@@ -94,32 +104,38 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
             Places.initialize(applicationContext, getString(R.string.PLACES_APP_KEY), Locale.US);
         }
 
-        val autocompleteFragment = supportFragmentManager.findFragmentById(R.id.autocomplete_fragment) as AutocompleteSupportFragment
-        autocompleteFragment.setPlaceFields(listOf(Place.Field.ID,Place.Field.NAME, Place.Field.LAT_LNG))
-        autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
-            override fun onPlaceSelected(place: Place) {
-                val lat = place.latLng?.latitude.toString()
-                val lon = place.latLng?.longitude.toString()
-
-                saveLocation(lat, lon, place.name)
-                WebRequest(this@MainActivity, getRequestString(lat, lon)).execute()
-            }
-
-            override fun onError(p0: Status) {
-                needToBackPressed = false
-            }
-        })
+        getCurrentPlaceId()
+        setAutocompleteFragment()
 
         savedTabColor?.let {
             changeMainWindowColors(it, it)
         }
     }
 
+    private fun setAutocompleteFragment() {
+        val autocompleteFragment = supportFragmentManager.findFragmentById(R.id.autocomplete_fragment) as AutocompleteSupportFragment
+        with(autocompleteFragment) {
+            setPlaceFields(listOf(Place.Field.NAME, Place.Field.LAT_LNG))
+            setOnPlaceSelectedListener(object : PlaceSelectionListener {
+                override fun onPlaceSelected(place: Place) {
+                    val lat = place.latLng?.latitude.toString()
+                    val lon = place.latLng?.longitude.toString()
+
+                    saveLocation(lat, lon, place.name)
+                    WebRequest(this@MainActivity, getRequestString(lat, lon)).execute()
+                }
+
+                override fun onError(p0: Status) {
+                    needToBackPressed = false
+                }
+            })
+        }
+    }
+
     override fun onBackPressed() {
-        if(needToBackPressed) {
-            super.onBackPressed()
-        } else {
-            needToBackPressed = true
+        when {
+            needToBackPressed -> super.onBackPressed()
+            else -> needToBackPressed = true
         }
     }
 
@@ -152,37 +168,31 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
             JSONObject(resp).let {
                 val colorId = WeatherDBWorker.setCurrentWeather(it.getJSONObject("current"))
                 WeatherDBWorker.setWeekWeather(it.getJSONArray("daily"))
+                updateFragments()
 
-                for (fragment in 0 until fragmentList.size) {
-                    when (fragment) {
-                        0 -> (fragmentList[0] as TodayFragment).updateUI()
-                        1 -> (fragmentList[1] as TomorrowFragment).updateUI()
-                        2 -> (fragmentList[2] as WeekFragment).updateUI()
-                    }
-                }
                 colorId?.let {
                     savedTabColor = colorId
-                    if(viewPager.currentItem == 1) {
-                        changeMainWindowColors("2dn", "2dn")
-                    } else {
-                        changeMainWindowColors(colorId, colorId)
+                    when(viewPager.currentItem) {
+                        1 -> changeMainWindowColors()
+                        else -> changeMainWindowColors(colorId, colorId)
                     }
                 }
             }
         } ?: Toast.makeText(this, R.string.update_error, Toast.LENGTH_SHORT).show()
     }
 
-    private fun changeMainWindowColors(colorId: String, oldColorId: String) { //        val resource = resources.getIdentifier(
+    private fun updateFragments() {
+        for (fragment in 0 until fragmentList.size) {
+            when (fragment) {
+                0 -> (fragmentList[0] as TodayFragment).updateUI()
+                1 -> (fragmentList[1] as TomorrowFragment).updateUI()
+                2 -> (fragmentList[2] as WeekFragment).updateUI()
+            }
+        }
+    }
 
-        val colorFrom = resources.getColor(resources.getIdentifier(
-            "colorPrimary${oldColorId}", "color", this.packageName),
-            null)
-
-        val colorTo = resources.getColor(resources.getIdentifier(
-            "colorPrimary${colorId}", "color", this.packageName),
-            null)
-
-        val colorAnimation = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
+    private fun changeMainWindowColors(colorId: String = "", oldColorId: String = "") {
+        val colorAnimation = ValueAnimator.ofObject(ArgbEvaluator(), getColor(oldColorId), getColor(colorId))
         colorAnimation.duration = 200
         colorAnimation.addUpdateListener { animator ->
             window.statusBarColor = animator.animatedValue as Int
@@ -190,6 +200,20 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
             toolbar.setBackgroundColor(animator.animatedValue as Int)
         }
         colorAnimation.start()
+    }
+
+    private fun getColor(colorId: String): Int = resources.getColor(resources.getIdentifier(
+        "colorPrimary${colorId}", "color", this.packageName),
+        null)
+
+    private fun checkPermissions() {
+        if(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
+                REQUEST_CODE
+            )
+        }
     }
 
     private fun saveLocation(lat: String, lon: String, city: String?) {
@@ -209,6 +233,38 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
             "lon" -> sharedPreferences.getString("lon", "37.618423")
             "city" -> sharedPreferences.getString("city", "Moscow")
             else -> null
+        }
+    }
+
+    private fun getCurrentPlaceId() {
+        val request = FindCurrentPlaceRequest.newInstance(listOf(Place.Field.ID))
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            val placeResponse = Places.createClient(this).findCurrentPlace(request)
+            placeResponse.addOnCompleteListener { task ->
+                if(task.isSuccessful) {
+                    task.result.placeLikelihoods[0].place.id?.let {
+                        getCurrentPlace(it)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun getCurrentPlace(id: String) {
+        val request = FetchPlaceRequest.newInstance(id, listOf(Place.Field.ADDRESS_COMPONENTS, Place.Field.LAT_LNG))
+        val addressPlaceResponse = Places.createClient(this).fetchPlace(request)
+        addressPlaceResponse.addOnCompleteListener { task ->
+            if(task.isSuccessful) {
+                task.result.place.addressComponents?.asList()?.let {
+                    val city = it[2].name
+                    task.result.place.latLng?.let { latLng ->
+                        val lat = latLng.latitude.toString()
+                        val lon = latLng.longitude.toString()
+                        saveLocation(lat, lon, city)
+                        WebRequest(this, getRequestString(lat, lon)).execute()
+                    }
+                }
+            }
         }
     }
 }
