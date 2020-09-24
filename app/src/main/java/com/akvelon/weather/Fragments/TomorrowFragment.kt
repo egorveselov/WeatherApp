@@ -1,5 +1,6 @@
 package com.akvelon.weather.fragments
 
+import android.content.Context
 import android.database.Cursor
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -78,11 +79,14 @@ class TomorrowFragment: Fragment(), BaseFragment {
                     calendar.timeInMillis = it.getString(2).toLong() * 1000
                     sunset.text = "Sunset ${calendar.get(Calendar.HOUR_OF_DAY)}:${calendar.get(java.util.Calendar.MINUTE)}"
 
-                    mornTemp.text = "Morning ${it.getString(8)} C°"
-                    dayTemp.text = "Day ${it.getString(3)} C°"
-                    eveTemp.text = "Evening ${it.getString(7)} C°"
-                    nightTemp.text = "Night ${it.getString(6)} C°"
-                    wind.text = "Wind ${it.getString(17)} m/sec"
+                    var tempUnit = activity?.getPreferences(Context.MODE_PRIVATE)?.getString(getString(R.string.TempUnit), getString(R.string.MetricUnit))
+                    var windSpeedUnit = activity?.getPreferences(Context.MODE_PRIVATE)?.getString(getString(R.string.WindSpeedUnit), getString(R.string.WindSpeedMetricUnit))
+
+                    mornTemp.text = "Morning ${it.getString(8)} $tempUnit"
+                    dayTemp.text = "Day ${it.getString(3)} $tempUnit"
+                    eveTemp.text = "Evening ${it.getString(7)} $tempUnit"
+                    nightTemp.text = "Night ${it.getString(6)} $tempUnit"
+                    wind.text = "Wind ${it.getString(17)} $windSpeedUnit"
 
                     weatherIcon.setImageResource(
                         resources.getIdentifier(

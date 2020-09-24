@@ -3,10 +3,14 @@ package com.akvelon.weather
 import android.Manifest
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import android.location.Location
 import android.os.Bundle
+import android.view.MenuItem
+import android.widget.Button
 import android.widget.ImageButton
 import android.widget.Toast
 import android.widget.Toolbar
@@ -32,6 +36,7 @@ import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest
 import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
+import com.google.android.material.navigation.NavigationView
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import kotlinx.android.synthetic.main.fragment_today.*
@@ -54,14 +59,16 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
     private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var toolbar: Toolbar
     private lateinit var drawer: DrawerLayout
+    private lateinit var celsius: Button
+    private lateinit var fahrenheit: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        window.statusBarColor = resources.getColor(R.color.colorPrimary01d, null)
         checkPermissions()
 
         WeatherDBWorker.sqLiteDatabase = WeatherDBHelper(this).writableDatabase
-
         WeatherDBWorker.getCursorToday()?.let {
             if (it.moveToFirst()) {
                 savedTabColor = it.getString(19)
@@ -91,11 +98,27 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
             })
         }
 
+        drawer = findViewById(R.id.drawerLayout)
+
+        val navigationView = findViewById<NavigationView>(R.id.navView)
+        celsius = navigationView.getHeaderView(0).findViewById(R.id.celsius)
+        celsius.setOnClickListener {
+            saveUnits(getString(R.string.Metric), getString(R.string.MetricUnit), getString(R.string.WindSpeedMetricUnit))
+            setActiveButton()
+            WebRequest(this, getRequestString()).execute()
+        }
+        fahrenheit = navigationView.getHeaderView(0).findViewById(R.id.fahrenheit)
+        fahrenheit.setOnClickListener {
+            saveUnits(getString(R.string.Imperial), getString(R.string.ImperialUnit), getString(R.string.WindSpeedImperialUnit))
+            setActiveButton()
+            WebRequest(this, getRequestString()).execute()
+        }
         tabLayout = findViewById(R.id.tabLayout)
         swipeRefresh = findViewById(R.id.swipeRefresh)
-        swipeRefresh.setOnRefreshListener { WebRequest(this, getRequestString(getLocation("lat"), getLocation("lon"))).execute() }
+        swipeRefresh.setOnRefreshListener {
+            WebRequest(this, getRequestString()).execute()
+        }
         toolbar = findViewById(R.id.toolBar)
-        drawer = findViewById(R.id.drawerLayout)
         hamburger = findViewById(R.id.hamburger)
         hamburger.setOnClickListener {
             drawer.open()
@@ -113,9 +136,20 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
 
         getCurrentPlaceId()
         setAutocompleteFragment()
+        setActiveButton()
 
         savedTabColor?.let {
             changeMainWindowColors(it, it)
+        }
+    }
+
+    private fun setActiveButton() {
+        if(getTemperatureUnit() == getString(R.string.Metric)) {
+            celsius.background = fahrenheit.background
+            fahrenheit.background = null
+        } else {
+            fahrenheit.background = celsius.background
+            celsius.background = null
         }
     }
 
@@ -129,7 +163,7 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
                     val lon = place.latLng?.longitude.toString()
 
                     saveLocation(lat, lon, place.name)
-                    WebRequest(this@MainActivity, getRequestString(lat, lon)).execute()
+                    WebRequest(this@MainActivity, getRequestString()).execute()
                 }
 
                 override fun onError(p0: Status) {
@@ -163,7 +197,10 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
     }
 
     private fun getRequestString(lat: String? = "55.751244", lon: String? = "37.618423"): String {
-        return "${String.format(getString(R.string.URL), lat, lon) + getString(R.string.APP_ID)}"
+        return "${String.format(getString(R.string.URL), 
+            getLocation(getString(R.string.Latitude)), 
+            getLocation(getString(R.string.Longitude)), 
+            getTemperatureUnit()) + getString(R.string.APP_ID)}"
     }
 
     override fun onRequestFinished(response: String?) {
@@ -216,6 +253,20 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         }
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if(requestCode == REQUEST_CODE) {
+            when(grantResults[0]) {
+                -1 -> Toast.makeText(this, R.string.update_error, Toast.LENGTH_SHORT).show()
+                else -> WebRequest(this, getRequestString()).execute()
+            }
+        }
+    }
+
     private fun saveLocation(lat: String, lon: String, city: String?) {
         val sharedPreferences = getPreferences(MODE_PRIVATE)
         with(sharedPreferences.edit()) {
@@ -235,6 +286,18 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
             else -> null
         }
     }
+
+    private fun saveUnits(unit: String, tempUnit: String, windSpeedUnit: String) {
+        val sharedPreferences = getPreferences(MODE_PRIVATE)
+        with(sharedPreferences.edit()) {
+            putString(getString(R.string.Unit), unit)
+            putString(getString(R.string.TempUnit), tempUnit)
+            putString(getString(R.string.WindSpeedUnit), windSpeedUnit)
+            commit()
+        }
+    }
+
+    private fun getTemperatureUnit(): String? = getPreferences(MODE_PRIVATE).getString(getString(R.string.Unit), "metric")
 
     private fun getCurrentPlaceId() {
         val request = FindCurrentPlaceRequest.newInstance(listOf(Place.Field.ID))
@@ -261,7 +324,7 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
                         val lat = latLng.latitude.toString()
                         val lon = latLng.longitude.toString()
                         saveLocation(lat, lon, city)
-                        WebRequest(this, getRequestString(lat, lon)).execute()
+                        WebRequest(this, getRequestString()).execute()
                     }
                 }
             }

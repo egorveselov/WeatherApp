@@ -6,7 +6,7 @@
     <string name="close">Close</string>
     <string name="menu_refresh">Refreshing</string>
     <string name="update_error">Couldn\'t update weather!</string>
-    <string name="URL" formatted="false">https://api.openweathermap.org/data/2.5/onecall?lat=%s&amp;lon=%s&amp;units=metric&amp;exclude=hourly&amp;appid=</string>
+    <string name="URL" formatted="false">https://api.openweathermap.org/data/2.5/onecall?lat=%s&amp;lon=%s&amp;units=%s&amp;exclude=hourly&amp;appid=</string>
     <string name="APP_ID">a0f70c8a7410e976dcecbfd5ba3ee4ed</string>
     <string name="PLACES_APP_KEY">AIzaSyDisx9jdhL_kQnRPChnNMAZOWE8wnWJV-8</string>
     <string name="Today">Today</string>
@@ -15,4 +15,13 @@
     <string name="Latitude">latitude</string>
     <string name="Longitude">longitude</string>
     <string name="City">city</string>
+    <string name="Unit">unit</string>
+    <string name="Metric">metric</string>
+    <string name="Imperial">imperial</string>
+    <string name="MetricUnit">C°</string>
+    <string name="ImperialUnit">F°</string>
+    <string name="TempUnit">tempUnit</string>
+    <string name="WindSpeedUnit">windSpeedInit</string>
+    <string name="WindSpeedMetricUnit">meter/sec</string>
+    <string name="WindSpeedImperialUnit">miles/hour</string>
 </resources>

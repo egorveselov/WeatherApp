@@ -30,6 +30,7 @@ class TodayFragment() : Fragment(), BaseFragment {
     private lateinit var feelsLike: TextView
     private lateinit var todayBackground: ImageView
     private lateinit var city: TextView
+    private lateinit var tempUnit: TextView
 
     companion object {
         fun newInstance() = TodayFragment().apply {
@@ -56,6 +57,7 @@ class TodayFragment() : Fragment(), BaseFragment {
         feelsLike = view.findViewById(R.id.feelsLike)
         todayBackground = view.findViewById(R.id.todayBackground)
         city = view.findViewById(R.id.city)
+        tempUnit = view.findViewById(R.id.tempUnit)
         updateUI()
         return view;
     }
@@ -86,6 +88,7 @@ class TodayFragment() : Fragment(), BaseFragment {
                     humidity.text = it.getString(6)
                     feelsLike.text = "Feels like ${it.getString(4)}°"
                     city.text = activity?.getPreferences(Context.MODE_PRIVATE)?.getString("city", "Moscow")
+                    tempUnit.text = activity?.getPreferences(Context.MODE_PRIVATE)?.getString(getString(R.string.TempUnit), getString(R.string.MetricUnit))
                     break
                 }
             }

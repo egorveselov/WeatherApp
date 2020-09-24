@@ -69,7 +69,7 @@
             android:id="@+id/wind"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Wind 10m/s"
+            android:text="Wind 10 meter/sec"
             android:textColor="#FFFFFF"
             android:textSize="18sp"
             app:layout_constraintEnd_toEndOf="@+id/weatherIcon"

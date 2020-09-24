@@ -16,7 +16,7 @@
             android:id="@+id/toolBar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="@android:color/white" >
+            android:background="@color/colorPrimary01d" >
 
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
@@ -55,7 +55,7 @@
             android:id="@+id/tabLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/white"
+            android:background="@color/colorPrimary01d"
             app:tabIndicatorColor="@android:color/white"
             app:tabTextColor="@android:color/white">
 
