@@ -7,10 +7,12 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
+import android.widget.ImageButton
 import android.widget.Toast
 import android.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
@@ -40,15 +42,18 @@ import kotlin.collections.ArrayList
 
 class MainActivity : FragmentActivity(), IWebRequestHandler {
     private val PAGE_COUNT = 3
+    private val REQUEST_CODE = 1
+    private var savedTabColor: String? = null
+    private var previousTabPosition = 0
+    private var needToBackPressed = true
+    private val fragmentList: ArrayList<Fragment> = ArrayList()
+
+    private lateinit var hamburger: ImageButton
     private lateinit var viewPager: ViewPager2
     private lateinit var tabLayout: TabLayout
     private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var toolbar: Toolbar
-    private val fragmentList: ArrayList<Fragment> = ArrayList()
-    private var savedTabColor: String? = null
-    private var previousTabPosition = 0
-    private var needToBackPressed = true
-    private val REQUEST_CODE = 1
+    private lateinit var drawer: DrawerLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,6 +95,11 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         swipeRefresh = findViewById(R.id.swipeRefresh)
         swipeRefresh.setOnRefreshListener { WebRequest(this, getRequestString(getLocation("lat"), getLocation("lon"))).execute() }
         toolbar = findViewById(R.id.toolBar)
+        drawer = findViewById(R.id.drawerLayout)
+        hamburger = findViewById(R.id.hamburger)
+        hamburger.setOnClickListener {
+            drawer.open()
+        }
 
         val tabTitles = arrayOf(getString(R.string.Today), getString(R.string.Tomorrow), getString(R.string.Week))
         TabLayoutMediator(tabLayout, viewPager, false) { tab, position ->
