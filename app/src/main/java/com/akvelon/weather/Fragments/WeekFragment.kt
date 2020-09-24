@@ -16,7 +16,7 @@ import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.*
 
-class WeekFragment() : Fragment() {
+class WeekFragment() : Fragment(), BaseFragment {
     private val DAYS_NUMBER = 8
     private lateinit var recyclerView: RecyclerView
     private lateinit var linearLayoutManager: LinearLayoutManager
@@ -45,7 +45,7 @@ class WeekFragment() : Fragment() {
         return view
     }
 
-    fun updateUI() {
+    override fun updateUI() {
         viewAdapter.notifyDataSetChanged()
     }
 

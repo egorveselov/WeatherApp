@@ -12,4 +12,7 @@
     <string name="Today">Today</string>
     <string name="Tomorrow">Tomorrow</string>
     <string name="Week">7 days</string>
+    <string name="Latitude">latitude</string>
+    <string name="Longitude">longitude</string>
+    <string name="City">city</string>
 </resources>

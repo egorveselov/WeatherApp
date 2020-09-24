@@ -17,7 +17,7 @@ import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.*
 
-class TodayFragment() : Fragment() {
+class TodayFragment() : Fragment(), BaseFragment {
     private lateinit var weatherTemperature: TextView
     private lateinit var currentDay: TextView
     private lateinit var weatherMain: TextView
@@ -60,7 +60,7 @@ class TodayFragment() : Fragment() {
         return view;
     }
 
-    fun updateUI() {
+    override fun updateUI() {
         WeatherDBWorker.getCursorDayOfWeek(LocalDate.now().toString())?.let {
             if(it.moveToFirst()) {
                 dayTemp.text = "Day ${it.getString(3)}°"

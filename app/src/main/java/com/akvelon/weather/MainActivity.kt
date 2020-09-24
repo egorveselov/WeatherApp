@@ -67,27 +67,24 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
             offscreenPageLimit = 2
             adapter = CustomFragmentStateAdapter(this@MainActivity)
             currentItem = 0
-        }
+            registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    super.onPageSelected(position)
+                    savedTabColor?.let { colorId ->
+                        val oldColorId = when(previousTabPosition) {
+                            0, 2 -> colorId
+                            else -> ""
+                        }
 
-        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                super.onPageSelected(position)
-                savedTabColor?.let { colorId ->
-                    val oldColorId = when(previousTabPosition) {
-                        0 -> colorId
-                        2 -> colorId
-                        else -> ""
+                        when(position) {
+                            0, 2 -> changeMainWindowColors(colorId, oldColorId)
+                            1 -> changeMainWindowColors("", colorId)
+                        }
                     }
-
-                    when(position) {
-                        0 -> changeMainWindowColors(colorId, oldColorId)
-                        1 -> changeMainWindowColors("", colorId)
-                        2 -> changeMainWindowColors(colorId, oldColorId)
-                    }
+                    previousTabPosition = position
                 }
-                previousTabPosition = position
-            }
-        })
+            })
+        }
 
         tabLayout = findViewById(R.id.tabLayout)
         swipeRefresh = findViewById(R.id.swipeRefresh)
@@ -143,19 +140,16 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         FragmentStateAdapter(activity) {
         override fun getItemCount(): Int = PAGE_COUNT
 
-        override fun createFragment(position: Int): Fragment =
+        override fun createFragment(position: Int): Fragment {
             when (position) {
-                0 -> {
-                    fragmentList.add(TodayFragment.newInstance()); fragmentList[0]
-                }
-                1 -> {
-                    fragmentList.add(TomorrowFragment.newInstance()); fragmentList[1]
-                }
-                2 -> {
-                    fragmentList.add(WeekFragment.newInstance()); fragmentList[2]
-                }
+                0 -> fragmentList.add(TodayFragment.newInstance())
+                1 -> fragmentList.add(TomorrowFragment.newInstance())
+                2 -> fragmentList.add(WeekFragment.newInstance())
                 else -> throw IllegalStateException("Invalid adapter position")
             }
+
+            return  fragmentList[position]
+        }
     }
 
     private fun getRequestString(lat: String? = "55.751244", lon: String? = "37.618423"): String {
@@ -183,11 +177,7 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
 
     private fun updateFragments() {
         for (fragment in 0 until fragmentList.size) {
-            when (fragment) {
-                0 -> (fragmentList[0] as TodayFragment).updateUI()
-                1 -> (fragmentList[1] as TomorrowFragment).updateUI()
-                2 -> (fragmentList[2] as WeekFragment).updateUI()
-            }
+            (fragmentList[fragment] as BaseFragment).updateUI()
         }
     }
 
@@ -219,9 +209,9 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
     private fun saveLocation(lat: String, lon: String, city: String?) {
         val sharedPreferences = getPreferences(MODE_PRIVATE)
         with(sharedPreferences.edit()) {
-            putString("lat", lat)
-            putString("lon", lon)
-            putString("city", city)
+            putString(getString(R.string.Latitude), lat)
+            putString(getString(R.string.Longitude), lon)
+            putString(getString(R.string.City), city)
             commit()
         }
     }
@@ -229,9 +219,9 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
     private fun getLocation(parameter: String): String? {
         val sharedPreferences = getPreferences(MODE_PRIVATE)
         return when(parameter) {
-            "lat" -> sharedPreferences.getString("lat", "55.751244")
-            "lon" -> sharedPreferences.getString("lon", "37.618423")
-            "city" -> sharedPreferences.getString("city", "Moscow")
+            getString(R.string.Latitude) -> sharedPreferences.getString(getString(R.string.Latitude), "55.751244")
+            getString(R.string.Longitude) -> sharedPreferences.getString(getString(R.string.Longitude), "37.618423")
+            getString(R.string.City) -> sharedPreferences.getString(getString(R.string.City), "Moscow")
             else -> null
         }
     }

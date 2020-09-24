@@ -15,7 +15,7 @@ import java.time.format.TextStyle
 import java.util.*
 
 
-class TomorrowFragment: Fragment() {
+class TomorrowFragment: Fragment(), BaseFragment {
     private lateinit var background: View
     private lateinit var mornTemp: TextView
     private lateinit var dayTemp: TextView
@@ -57,11 +57,11 @@ class TomorrowFragment: Fragment() {
 
     private fun getCursor(): Cursor? = WeatherDBWorker.getDataFromDB(
         WeatherDBHelper.WeekWeather.columns.first(),
-        LocalDate.now().toString(),
+        LocalDate.now().plusDays(1).toString(),
         WeatherDBHelper.WeekWeather.columns.subList(1, WeatherDBHelper.WeekWeather.columns.size)
     )
 
-    fun updateUI() {
+    override fun updateUI() {
         getCursor()?.let {
             if (it.moveToFirst()) {
                 while (!it.isAfterLast) {
