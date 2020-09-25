@@ -100,7 +100,7 @@
                             android:layout_width="50dp"
                             android:layout_height="50dp"
                             android:layout_marginLeft="16dp"
-                            android:src="@drawable/wind_turbine" />
+                            android:src="@drawable/wind" />
 
                         <View
                             android:id="@+id/divider2"
