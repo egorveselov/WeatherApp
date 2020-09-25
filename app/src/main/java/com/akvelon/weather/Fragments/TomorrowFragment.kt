@@ -11,6 +11,7 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.akvelon.weather.R
 import com.akvelon.weather.database.*
+import kotlinx.android.synthetic.main.fragment_today.view.*
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.*
@@ -20,13 +21,14 @@ class TomorrowFragment: Fragment(), BaseFragment {
     private lateinit var background: View
     private lateinit var mornTemp: TextView
     private lateinit var dayTemp: TextView
+    private lateinit var dayTempMain: TextView
     private lateinit var eveTemp: TextView
     private lateinit var nightTemp: TextView
     private lateinit var date: TextView
     private lateinit var wind: TextView
     private lateinit var weatherMain: TextView
-    private lateinit var sunset: TextView
-    private lateinit var sunrise: TextView
+    private lateinit var pressure: TextView
+    private lateinit var humidity: TextView
     private lateinit var weatherIcon: ImageView
 
     companion object {
@@ -41,7 +43,7 @@ class TomorrowFragment: Fragment(), BaseFragment {
         savedInstanceState: Bundle?
     ): View? {
         var view = inflater.inflate(R.layout.fragment_tomorrow, container, false)
-        background = view.findViewById(R.id.todayBackground)
+        background = view.findViewById(R.id.tomorrowBackground)
         mornTemp = view.findViewById(R.id.mornTemp)
         dayTemp = view.findViewById(R.id.dayTemp)
         eveTemp = view.findViewById(R.id.eveTemp)
@@ -49,8 +51,9 @@ class TomorrowFragment: Fragment(), BaseFragment {
         date = view.findViewById(R.id.date)
         wind = view.findViewById(R.id.wind)
         weatherMain = view.findViewById(R.id.main)
-        sunset = view.findViewById(R.id.sunset)
-        sunrise = view.findViewById(R.id.sunrise)
+        dayTempMain = view.findViewById(R.id.dayTempMain)
+        pressure = view.findViewById(R.id.pressure)
+        humidity = view.findViewById(R.id.humidity)
         weatherIcon = view.findViewById(R.id.weatherIcon)
 
         return view
@@ -72,21 +75,15 @@ class TomorrowFragment: Fragment(), BaseFragment {
                         ).toUpperCase()}"
                     }
 
-                    val calendar = Calendar.getInstance()
-                    calendar.timeInMillis = it.getString(1).toLong() * 1000
-                    sunrise.text = "Sunrise ${calendar.get(Calendar.HOUR_OF_DAY)}:${calendar.get(Calendar.MINUTE)}"
-
-                    calendar.timeInMillis = it.getString(2).toLong() * 1000
-                    sunset.text = "Sunset ${calendar.get(Calendar.HOUR_OF_DAY)}:${calendar.get(java.util.Calendar.MINUTE)}"
-
-                    var tempUnit = activity?.getPreferences(Context.MODE_PRIVATE)?.getString(getString(R.string.TempUnit), getString(R.string.MetricUnit))
                     var windSpeedUnit = activity?.getPreferences(Context.MODE_PRIVATE)?.getString(getString(R.string.WindSpeedUnit), getString(R.string.WindSpeedMetricUnit))
-
-                    mornTemp.text = "Morning ${it.getString(8)} $tempUnit"
-                    dayTemp.text = "Day ${it.getString(3)} $tempUnit"
-                    eveTemp.text = "Evening ${it.getString(7)} $tempUnit"
-                    nightTemp.text = "Night ${it.getString(6)} $tempUnit"
+                    mornTemp.text = "${it.getString(8)}°"
+                    dayTemp.text = "${it.getString(3)}°"
+                    dayTempMain.text = "${it.getString(3)}°"
+                    eveTemp.text = "${it.getString(7)}°"
+                    nightTemp.text = "${it.getString(6)}°"
                     wind.text = "Wind ${it.getString(17)} $windSpeedUnit"
+                    pressure.text = "Pressure ${it.getString(13)}"
+                    humidity.text = "Humidity ${it.getString(14)}"
 
                     weatherIcon.setImageResource(
                         resources.getIdentifier(
