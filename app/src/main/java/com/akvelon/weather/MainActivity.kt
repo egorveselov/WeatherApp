@@ -3,6 +3,7 @@ package com.akvelon.weather
 import android.Manifest
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -10,10 +11,9 @@ import android.graphics.drawable.Drawable
 import android.location.Location
 import android.os.Bundle
 import android.view.MenuItem
-import android.widget.Button
-import android.widget.ImageButton
-import android.widget.Toast
-import android.widget.Toolbar
+import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
+import android.widget.*
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.drawerlayout.widget.DrawerLayout
@@ -40,6 +40,7 @@ import com.google.android.material.navigation.NavigationView
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import kotlinx.android.synthetic.main.fragment_today.*
+import kotlinx.android.synthetic.main.fragment_tomorrow.*
 import org.json.JSONObject
 import java.util.*
 import kotlin.collections.ArrayList
@@ -57,15 +58,17 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
     private lateinit var viewPager: ViewPager2
     private lateinit var tabLayout: TabLayout
     private lateinit var swipeRefresh: SwipeRefreshLayout
-    private lateinit var toolbar: Toolbar
+    private lateinit var toolbar: FrameLayout
     private lateinit var drawer: DrawerLayout
     private lateinit var celsius: Button
     private lateinit var fahrenheit: Button
+    private lateinit var searchField: EditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         window.statusBarColor = resources.getColor(R.color.colorPrimary01d, null)
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
         checkPermissions()
 
         WeatherDBWorker.sqLiteDatabase = WeatherDBHelper(this).writableDatabase
@@ -99,6 +102,16 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         }
 
         drawer = findViewById(R.id.drawerLayout)
+        toolbar = findViewById(R.id.toolBar)
+
+        searchField = findViewById(R.id.searchField)
+        searchField.setOnClickListener {
+            createSearchFragment()
+        }
+
+        findViewById<ImageButton>(R.id.searchButton).setOnClickListener {
+            createSearchFragment()
+        }
 
         val navigationView = findViewById<NavigationView>(R.id.navView)
         celsius = navigationView.getHeaderView(0).findViewById(R.id.celsius)
@@ -118,7 +131,7 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         swipeRefresh.setOnRefreshListener {
             WebRequest(this, getRequestString()).execute()
         }
-        toolbar = findViewById(R.id.toolBar)
+
         hamburger = findViewById(R.id.hamburger)
         hamburger.setOnClickListener {
             drawer.open()
@@ -135,12 +148,18 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         }
 
         getCurrentPlaceId()
-        setAutocompleteFragment()
         setActiveButton()
 
         savedTabColor?.let {
             changeMainWindowColors(it, it)
         }
+    }
+
+    private fun createSearchFragment() {
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.add(R.id.test_container, SearchFragment())
+        transaction.addToBackStack(null)
+        transaction.commit()
     }
 
     private fun setActiveButton() {
@@ -150,26 +169,6 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         } else {
             fahrenheit.background = celsius.background
             celsius.background = null
-        }
-    }
-
-    private fun setAutocompleteFragment() {
-        val autocompleteFragment = supportFragmentManager.findFragmentById(R.id.autocomplete_fragment) as AutocompleteSupportFragment
-        with(autocompleteFragment) {
-            setPlaceFields(listOf(Place.Field.NAME, Place.Field.LAT_LNG))
-            setOnPlaceSelectedListener(object : PlaceSelectionListener {
-                override fun onPlaceSelected(place: Place) {
-                    val lat = place.latLng?.latitude.toString()
-                    val lon = place.latLng?.longitude.toString()
-
-                    saveLocation(lat, lon, place.name)
-                    WebRequest(this@MainActivity, getRequestString()).execute()
-                }
-
-                override fun onError(p0: Status) {
-                    needToBackPressed = false
-                }
-            })
         }
     }
 
@@ -313,21 +312,31 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         }
     }
 
-    private fun getCurrentPlace(id: String) {
+    fun getCurrentPlace(id: String) {
         val request = FetchPlaceRequest.newInstance(id, listOf(Place.Field.ADDRESS_COMPONENTS, Place.Field.LAT_LNG))
         val addressPlaceResponse = Places.createClient(this).fetchPlace(request)
         addressPlaceResponse.addOnCompleteListener { task ->
             if(task.isSuccessful) {
                 task.result.place.addressComponents?.asList()?.let {
-                    val city = it[2].name
-                    task.result.place.latLng?.let { latLng ->
-                        val lat = latLng.latitude.toString()
-                        val lon = latLng.longitude.toString()
-                        saveLocation(lat, lon, city)
-                        WebRequest(this, getRequestString()).execute()
+                    for(pos in 0 until it.size) {
+                        if(it[pos].types[0] == "locality") {
+                            val city = it[pos].name
+                            task.result.place.latLng?.let { latLng ->
+                                val lat = latLng.latitude.toString()
+                                val lon = latLng.longitude.toString()
+                                saveLocation(lat, lon, city)
+                                searchField.setText(city)
+                                WebRequest(this, getRequestString()).execute()
+                            }
+                        }
                     }
                 }
             }
         }
+    }
+
+    fun closeSearch() {
+        val fragments = supportFragmentManager.fragments
+        supportFragmentManager.beginTransaction().remove(fragments.last()).commit()
     }
 }
