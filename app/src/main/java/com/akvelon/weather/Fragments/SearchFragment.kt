@@ -25,17 +25,19 @@ import com.google.android.libraries.places.api.model.AutocompleteSessionToken
 import com.google.android.libraries.places.api.model.TypeFilter
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsResponse
+import kotlinx.android.synthetic.main.fragment_search.*
 import kotlinx.android.synthetic.main.location_hint.view.*
 import java.lang.Exception
 
 
-class SearchFragment(val showKeyboard: Boolean): Fragment() {
+class SearchFragment(private val showKeyboard: Boolean): Fragment() {
     private val MAX_HINTS = 3
     private lateinit var constraintLayout: ConstraintLayout
-    private lateinit var autoCompleteTextView: EditText
+    private lateinit var searchField: EditText
     private lateinit var recyclerView: RecyclerView
     private lateinit var linearLayoutManager: LinearLayoutManager
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
+    private lateinit var backButton: ImageButton
     private var hintList = mutableListOf<AutocompletePrediction>()
 
     override fun onCreateView(
@@ -46,60 +48,72 @@ class SearchFragment(val showKeyboard: Boolean): Fragment() {
         var view = inflater.inflate(R.layout.fragment_search, container, false)
         linearLayoutManager = LinearLayoutManager(requireContext())
         viewAdapter = CustomAdapter()
-        recyclerView = view.findViewById<RecyclerView>(R.id.hintRecyclerView).apply {
+        recyclerView = view.findViewById(R.id.hintRecyclerView)
+        constraintLayout = view.findViewById(R.id.constrainLayout)
+        searchField = view.findViewById(R.id.searchField)
+        backButton = view.findViewById(R.id.backButton)
+        val searchButton = view.findViewById<ImageButton>(R.id.searchButton)
+
+        with(recyclerView) {
             setHasFixedSize(true)
             layoutManager = linearLayoutManager
             adapter = viewAdapter
         }
 
-        constraintLayout = view.findViewById(R.id.constrainLayout)
         constraintLayout.setOnClickListener {
             closeKeyboard()
             (activity as MainActivity).closeSearch()
         }
 
-        autoCompleteTextView = view.findViewById(R.id.searchField)
-        autoCompleteTextView.requestFocus()
-        val searchButton = view.findViewById<ImageButton>(R.id.searchButton)
+        with(searchField) {
+            requestFocus()
+
+            setOnEditorActionListener { v, actionId, event ->
+                if(actionId == EditorInfo.IME_ACTION_SEARCH) {
+                    try {
+                        val place = hintList[0]
+                        (activity as MainActivity).getCurrentPlace(place.placeId)
+
+                    } catch (e: Exception){}
+                    finally {
+                        constraintLayout.callOnClick()
+                    }
+                }
+
+                return@setOnEditorActionListener true
+            }
+
+            addTextChangedListener(object : TextWatcher {
+                override fun afterTextChanged(s: Editable?) {}
+                override fun beforeTextChanged(
+                    s: CharSequence, start: Int,
+                    count: Int, after: Int
+                ) {
+                }
+
+                override fun onTextChanged(
+                    s: CharSequence, start: Int,
+                    before: Int, count: Int
+                ) {
+                    if(searchField.text.toString() == "") {
+                        searchButton.setImageDrawable(resources.getDrawable(R.drawable.baseline_search_black_24dp, null))
+                    } else {
+                        searchButton.setImageDrawable(resources.getDrawable(R.drawable.baseline_clear_black_24dp, null))
+                    }
+                    getAutocompletePredictions(s)
+                }
+            })
+
+        }
+
         searchButton.setOnClickListener {
-            autoCompleteTextView.setText("")
+            searchField.setText("")
         }
 
-        autoCompleteTextView.setOnEditorActionListener { v, actionId, event ->
-            if(actionId == EditorInfo.IME_ACTION_SEARCH) {
-                try {
-                    val place = hintList[0]
-                    (activity as MainActivity).getCurrentPlace(place.placeId)
-
-                } catch (e: Exception){}
-                finally {
-                    constraintLayout.callOnClick()
-                }
-            }
-
-            return@setOnEditorActionListener true
+        backButton.setOnClickListener {
+            closeKeyboard()
+            constraintLayout.callOnClick()
         }
-
-        autoCompleteTextView.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) {}
-            override fun beforeTextChanged(
-                s: CharSequence, start: Int,
-                count: Int, after: Int
-            ) {
-            }
-
-            override fun onTextChanged(
-                s: CharSequence, start: Int,
-                before: Int, count: Int
-            ) {
-                if(autoCompleteTextView.text.toString() == "") {
-                    searchButton.setImageDrawable(resources.getDrawable(R.drawable.baseline_search_black_24dp, null))
-                } else {
-                    searchButton.setImageDrawable(resources.getDrawable(R.drawable.baseline_clear_black_24dp, null))
-                }
-                getAutocompletePredictions(s)
-            }
-        })
 
         if(showKeyboard) {
             showKeyboard()
