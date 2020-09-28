@@ -105,12 +105,13 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         toolbar = findViewById(R.id.toolBar)
 
         searchField = findViewById(R.id.searchField)
+        searchField.requestFocus()
         searchField.setOnClickListener {
-            createSearchFragment()
+            createSearchFragment(false)
         }
 
         findViewById<ImageButton>(R.id.searchButton).setOnClickListener {
-            createSearchFragment()
+            createSearchFragment(true)
         }
 
         val navigationView = findViewById<NavigationView>(R.id.navView)
@@ -155,9 +156,9 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         }
     }
 
-    private fun createSearchFragment() {
+    private fun createSearchFragment(showKeyboard: Boolean) {
         val transaction = supportFragmentManager.beginTransaction()
-        transaction.add(R.id.test_container, SearchFragment())
+        transaction.add(R.id.test_container, SearchFragment(showKeyboard))
         transaction.addToBackStack(null)
         transaction.commit()
     }

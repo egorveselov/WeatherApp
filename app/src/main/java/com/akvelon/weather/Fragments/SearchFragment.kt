@@ -26,7 +26,7 @@ import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRe
 import kotlinx.android.synthetic.main.location_hint.view.*
 
 
-class SearchFragment: Fragment() {
+class SearchFragment(val showKeyboard: Boolean): Fragment() {
     private val MAX_HINTS = 3
     private lateinit var constraintLayout: ConstraintLayout
     private lateinit var autoCompleteTextView: EditText
@@ -83,7 +83,10 @@ class SearchFragment: Fragment() {
             }
         })
 
-        showKeyboard()
+        if(showKeyboard) {
+            showKeyboard()
+        }
+
         return view;
     }
 
