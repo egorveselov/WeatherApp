@@ -4,9 +4,11 @@ import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -24,6 +26,7 @@ import com.google.android.libraries.places.api.model.TypeFilter
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsResponse
 import kotlinx.android.synthetic.main.location_hint.view.*
+import java.lang.Exception
 
 
 class SearchFragment(val showKeyboard: Boolean): Fragment() {
@@ -60,6 +63,21 @@ class SearchFragment(val showKeyboard: Boolean): Fragment() {
         val searchButton = view.findViewById<ImageButton>(R.id.searchButton)
         searchButton.setOnClickListener {
             autoCompleteTextView.setText("")
+        }
+
+        autoCompleteTextView.setOnEditorActionListener { v, actionId, event ->
+            if(actionId == EditorInfo.IME_ACTION_SEARCH) {
+                try {
+                    val place = hintList[0]
+                    (activity as MainActivity).getCurrentPlace(place.placeId)
+
+                } catch (e: Exception){}
+                finally {
+                    constraintLayout.callOnClick()
+                }
+            }
+
+            return@setOnEditorActionListener true
         }
 
         autoCompleteTextView.addTextChangedListener(object : TextWatcher {

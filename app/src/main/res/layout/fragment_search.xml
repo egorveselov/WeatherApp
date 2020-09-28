@@ -48,6 +48,8 @@
                         android:textCursorDrawable="@null"
                         android:layout_marginLeft="24dp"
                         android:layout_marginRight="8dp"
+                        android:inputType="text"
+                        android:imeOptions="actionSearch"
                         android:layout_toLeftOf="@+id/searchButton" />
 
                     <ImageButton
