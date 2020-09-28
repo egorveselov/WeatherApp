@@ -84,6 +84,7 @@ class TomorrowFragment: Fragment(), BaseFragment {
                     wind.text = "Wind ${it.getString(17)} $windSpeedUnit"
                     pressure.text = "Pressure ${it.getString(13)}"
                     humidity.text = "Humidity ${it.getString(14)}"
+                    weatherMain.text = "${it.getString(20)}"
 
                     weatherIcon.setImageResource(
                         resources.getIdentifier(
