@@ -24,4 +24,5 @@
     <string name="WindSpeedUnit">windSpeedInit</string>
     <string name="WindSpeedMetricUnit">meter/sec</string>
     <string name="WindSpeedImperialUnit">miles/hour</string>
+    <string name="autolocation">autolocation</string>
 </resources>

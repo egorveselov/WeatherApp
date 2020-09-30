@@ -127,6 +127,7 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
             setActiveButton()
             WebRequest(this, getRequestString()).execute()
         }
+
         tabLayout = findViewById(R.id.tabLayout)
         swipeRefresh = findViewById(R.id.swipeRefresh)
         swipeRefresh.setOnRefreshListener {
@@ -148,7 +149,21 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
             Places.initialize(applicationContext, getString(R.string.PLACES_APP_KEY), Locale.US);
         }
 
-        getCurrentPlaceId()
+
+        val isAutolocationChecked = getPreferences(MODE_PRIVATE).getBoolean("autolocation", true)
+        (navigationView.getHeaderView(0).findViewById<Switch>(R.id.autolocation)).apply {
+            isChecked = isAutolocationChecked
+                setOnCheckedChangeListener { buttonView, isChecked ->
+                    getPreferences(MODE_PRIVATE).edit().putBoolean("autolocation", isChecked).commit()
+                }
+        }
+
+        if(isAutolocationChecked) {
+            getCurrentPlaceId()
+        } else {
+            searchField.setText(getLocation(getString(R.string.City)))
+        }
+
         setActiveButton()
 
         savedTabColor?.let {
