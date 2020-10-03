@@ -58,7 +58,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:text="17 C"
+                        android:text="--- C"
                         android:textColor="@android:color/white"
                         android:textSize="64sp"
                         android:textStyle="bold" />
@@ -114,9 +114,9 @@
                             android:id="@+id/wind"
                             android:layout_width="wrap_content"
                             android:layout_height="match_parent"
-                            android:gravity="center"
                             android:layout_weight="1"
-                            android:text="Wind 10 meter/sec"
+                            android:gravity="center"
+                            android:text="Wind --- meter/sec"
                             android:textSize="18sp" />
 
                     </LinearLayout>
@@ -144,9 +144,9 @@
                             android:id="@+id/humidity"
                             android:layout_width="wrap_content"
                             android:layout_height="match_parent"
-                            android:gravity="center"
                             android:layout_weight="1"
-                            android:text="Humidity 90"
+                            android:gravity="center"
+                            android:text="Humidity ---"
                             android:textSize="18sp" />
 
                     </LinearLayout>
@@ -174,9 +174,9 @@
                             android:id="@+id/pressure"
                             android:layout_width="wrap_content"
                             android:layout_height="match_parent"
-                            android:gravity="center"
                             android:layout_weight="1"
-                            android:text="Pressure 970"
+                            android:gravity="center"
+                            android:text="Pressure ---"
                             android:textSize="18sp" />
 
                     </LinearLayout>
@@ -217,6 +217,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
+                                android:text="---"
                                 android:textSize="18sp" />
 
                         </LinearLayout>
@@ -239,6 +240,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
+                                android:text="---"
                                 android:textSize="18sp" />
 
                         </LinearLayout>
@@ -261,6 +263,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
+                                android:text="---"
                                 android:textSize="18sp" />
 
                         </LinearLayout>
@@ -283,6 +286,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
+                                android:text="---"
                                 android:textSize="18sp" />
 
                         </LinearLayout>

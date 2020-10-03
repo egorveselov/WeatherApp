@@ -139,6 +139,10 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
             drawer.open()
         }
 
+        findViewById<ImageButton>(R.id.mylocation).setOnClickListener {
+            getCurrentPlaceId()
+        }
+
         val tabTitles = arrayOf(getString(R.string.Today), getString(R.string.Tomorrow), getString(R.string.Week))
         TabLayoutMediator(tabLayout, viewPager, false) { tab, position ->
             tab.text = tabTitles[position]
@@ -150,18 +154,18 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         }
 
 
-        val isAutolocationChecked = getPreferences(MODE_PRIVATE).getBoolean("autolocation", true)
+        val isAutolocationChecked = getPreferences(MODE_PRIVATE).getBoolean(getString(R.string.autolocation), true)
         (navigationView.getHeaderView(0).findViewById<Switch>(R.id.autolocation)).apply {
             isChecked = isAutolocationChecked
                 setOnCheckedChangeListener { buttonView, isChecked ->
-                    getPreferences(MODE_PRIVATE).edit().putBoolean("autolocation", isChecked).commit()
+                    getPreferences(MODE_PRIVATE).edit().putBoolean(getString(R.string.autolocation), isChecked).commit()
                 }
         }
 
         if(isAutolocationChecked) {
             getCurrentPlaceId()
         } else {
-            searchField.setText(getLocation(getString(R.string.City)))
+            getCurrentPlace(getPreferences(MODE_PRIVATE).getString(getString(R.string.placeid), null))
         }
 
         setActiveButton()
@@ -211,7 +215,7 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         }
     }
 
-    private fun getRequestString(lat: String? = "55.751244", lon: String? = "37.618423"): String {
+    private fun getRequestString(): String {
         return "${String.format(getString(R.string.URL), 
             getLocation(getString(R.string.Latitude)), 
             getLocation(getString(R.string.Longitude)), 
@@ -222,8 +226,8 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         swipeRefresh.isRefreshing = false
         response?.let { resp ->
             JSONObject(resp).let {
-                val colorId = WeatherDBWorker.setCurrentWeather(it.getJSONObject("current"))
-                WeatherDBWorker.setWeekWeather(it.getJSONArray("daily"))
+                val colorId = WeatherDBWorker.setCurrentWeather(it.getJSONObject(getString(R.string.current)))
+                WeatherDBWorker.setWeekWeather(it.getJSONArray(getString(R.string.daily)))
                 updateFragments()
 
                 colorId?.let {
@@ -277,17 +281,18 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         if(requestCode == REQUEST_CODE) {
             when(grantResults[0]) {
                 -1 -> Toast.makeText(this, R.string.update_error, Toast.LENGTH_SHORT).show()
-                else -> WebRequest(this, getRequestString()).execute()
+                else -> getCurrentPlaceId()
             }
         }
     }
 
-    private fun saveLocation(lat: String, lon: String, city: String?) {
+    private fun saveLocation(lat: String, lon: String, city: String?, placeId: String) {
         val sharedPreferences = getPreferences(MODE_PRIVATE)
         with(sharedPreferences.edit()) {
             putString(getString(R.string.Latitude), lat)
             putString(getString(R.string.Longitude), lon)
             putString(getString(R.string.City), city)
+            putString(getString(R.string.placeid), placeId)
             commit()
         }
     }
@@ -295,9 +300,9 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
     private fun getLocation(parameter: String): String? {
         val sharedPreferences = getPreferences(MODE_PRIVATE)
         return when(parameter) {
-            getString(R.string.Latitude) -> sharedPreferences.getString(getString(R.string.Latitude), "55.751244")
-            getString(R.string.Longitude) -> sharedPreferences.getString(getString(R.string.Longitude), "37.618423")
-            getString(R.string.City) -> sharedPreferences.getString(getString(R.string.City), "Moscow")
+            getString(R.string.Latitude) -> sharedPreferences.getString(getString(R.string.Latitude), null)
+            getString(R.string.Longitude) -> sharedPreferences.getString(getString(R.string.Longitude), null)
+            getString(R.string.City) -> sharedPreferences.getString(getString(R.string.City), null)
             else -> null
         }
     }
@@ -312,7 +317,7 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         }
     }
 
-    private fun getTemperatureUnit(): String? = getPreferences(MODE_PRIVATE).getString(getString(R.string.Unit), "metric")
+    private fun getTemperatureUnit(): String? = getPreferences(MODE_PRIVATE).getString(getString(R.string.Unit), getString(R.string.Metric))
 
     private fun getCurrentPlaceId() {
         val request = FindCurrentPlaceRequest.newInstance(listOf(Place.Field.ID))
@@ -328,19 +333,22 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         }
     }
 
-    fun getCurrentPlace(id: String) {
+    fun getCurrentPlace(id: String?) {
+        if(id == null) {
+            return
+        }
         val request = FetchPlaceRequest.newInstance(id, listOf(Place.Field.ADDRESS_COMPONENTS, Place.Field.LAT_LNG))
         val addressPlaceResponse = Places.createClient(this).fetchPlace(request)
         addressPlaceResponse.addOnCompleteListener { task ->
             if(task.isSuccessful) {
                 task.result.place.addressComponents?.asList()?.let {
                     for(pos in 0 until it.size) {
-                        if(it[pos].types[0] == "locality") {
+                        if(it[pos].types[0] == getString(R.string.locality)) {
                             val city = it[pos].name
                             task.result.place.latLng?.let { latLng ->
                                 val lat = latLng.latitude.toString()
                                 val lon = latLng.longitude.toString()
-                                saveLocation(lat, lon, city)
+                                saveLocation(lat, lon, city, id)
                                 searchField.setText(city)
                                 WebRequest(this, getRequestString()).execute()
                             }

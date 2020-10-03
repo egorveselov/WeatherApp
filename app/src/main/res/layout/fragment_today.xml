@@ -38,7 +38,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingRight="5dp"
-                android:text="Day 25°"
+                android:text="Day ---°"
                 android:textColor="@android:color/white" />
 
             <TextView
@@ -52,7 +52,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingLeft="5dp"
-                android:text="Night 15°"
+                android:text="Night ---°"
                 android:textColor="@android:color/white" />
 
         </LinearLayout>
@@ -67,7 +67,7 @@
                 android:id="@+id/weatherTemperature"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="24"
+                android:text="---"
                 android:textColor="@android:color/white"
                 android:textSize="62sp" />
 
@@ -95,7 +95,7 @@
         android:id="@+id/city"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Moscow"
+        android:text="CIty"
         android:textColor="@android:color/white"
         android:textSize="36sp"
         android:textStyle="bold"
@@ -154,7 +154,7 @@
                 android:id="@+id/pressureValue"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="value"
+                android:text="---"
                 android:textColor="@android:color/white" />
         </LinearLayout>
 
@@ -180,9 +180,9 @@
                 android:id="@+id/humidityValue"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="@android:color/white"
                 android:paddingLeft="5dp"
-                android:text="value" />
+                android:text="---"
+                android:textColor="@android:color/white" />
 
         </LinearLayout>
 
@@ -209,7 +209,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="main"
+            android:text="---"
             android:textColor="@android:color/white"
             android:textSize="24sp" />
 

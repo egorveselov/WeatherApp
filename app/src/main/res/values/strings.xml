@@ -25,4 +25,8 @@
     <string name="WindSpeedMetricUnit">meter/sec</string>
     <string name="WindSpeedImperialUnit">miles/hour</string>
     <string name="autolocation">autolocation</string>
+    <string name="placeid">placeid</string>
+    <string name="locality">locality</string>
+    <string name="daily">daily</string>
+    <string name="current">current</string>
 </resources>
