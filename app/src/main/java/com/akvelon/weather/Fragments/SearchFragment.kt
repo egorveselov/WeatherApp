@@ -72,7 +72,7 @@ class SearchFragment(private val showKeyboard: Boolean): Fragment() {
                 if(actionId == EditorInfo.IME_ACTION_SEARCH) {
                     try {
                         val place = hintList[0]
-                        (activity as MainActivity).getCurrentPlace(place.placeId)
+                        (activity as MainActivity).onSearchPlaceStart(place.placeId)
 
                     } catch (e: Exception){}
                     finally {
@@ -141,7 +141,7 @@ class SearchFragment(private val showKeyboard: Boolean): Fragment() {
             }
 
             card.setOnClickListener {
-                (activity as MainActivity).getCurrentPlace(hintList[position].placeId)
+                (activity as MainActivity).onSearchPlaceStart(hintList[position].placeId)
                 constraintLayout.callOnClick()
             }
         }
