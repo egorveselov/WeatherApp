@@ -1,7 +1,7 @@
 package com.akvelon.weather.web
 
+import android.content.Context
 import androidx.fragment.app.FragmentActivity
-import com.akvelon.weather.MainActivity
 import com.akvelon.weather.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,12 +35,12 @@ class Weather(private val context: FragmentActivity) {
     }
 
     fun getTemperatureUnit(): String? = with(context) {
-        getPreferences(FragmentActivity.MODE_PRIVATE).getString(getString(R.string.Unit), getString(R.string.Metric))
+        getSharedPreferences("settings", Context.MODE_PRIVATE).getString(getString(R.string.Unit), getString(R.string.Metric))
     }
 
     fun saveUnits(unit: String, tempUnit: String, windSpeedUnit: String) {
         with(context) {
-            val sharedPreferences = getPreferences(FragmentActivity.MODE_PRIVATE)
+            val sharedPreferences = getSharedPreferences("settings", Context.MODE_PRIVATE)
             with(sharedPreferences.edit()) {
                 putString(getString(R.string.Unit), unit)
                 putString(getString(R.string.TempUnit), tempUnit)

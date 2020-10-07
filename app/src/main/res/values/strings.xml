@@ -29,4 +29,5 @@
     <string name="locality">locality</string>
     <string name="daily">daily</string>
     <string name="current">current</string>
+    <string name="SEARCH_FRAGMENT">SEARCH_FRAGMENT</string>
 </resources>

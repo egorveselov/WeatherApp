@@ -75,7 +75,7 @@ class TomorrowFragment: Fragment(), BaseFragment {
                         ).toUpperCase()}"
                     }
 
-                    var windSpeedUnit = activity?.getPreferences(Context.MODE_PRIVATE)?.getString(getString(R.string.WindSpeedUnit), getString(R.string.WindSpeedMetricUnit))
+                    var windSpeedUnit = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)?.getString(getString(R.string.WindSpeedUnit), getString(R.string.WindSpeedMetricUnit))
                     mornTemp.text = "${it.getString(8)}°"
                     dayTemp.text = "${it.getString(3)}°"
                     dayTempMain.text = "${it.getString(3)}°"

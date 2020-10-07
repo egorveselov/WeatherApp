@@ -5,4 +5,5 @@ interface IWebRequestHandler {
     fun onGetPlaceIdRequestFinished(response: String?)
     fun onGetCurrentPlaceRequestFinished(response: String)
     fun onSearchPlaceStart(response: String)
+    fun onFindAutocompletePredictionsFinished(response: MutableList<String>)
 }

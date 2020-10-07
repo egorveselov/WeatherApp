@@ -3,52 +3,31 @@ package com.akvelon.weather
 import android.Manifest
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
-import android.content.Context
-import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
-import android.location.Location
 import android.os.Bundle
-import android.view.MenuItem
 import android.view.WindowManager
-import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
-import androidx.fragment.app.FragmentManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.akvelon.weather.database.*
 import com.akvelon.weather.fragments.*
 import com.akvelon.weather.web.*
-import com.google.android.gms.common.api.Status
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
 import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.api.net.FetchPlaceRequest
-import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest
-import com.google.android.libraries.places.api.net.PlacesClient
-import com.google.android.libraries.places.widget.AutocompleteSupportFragment
-import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
-import kotlinx.android.synthetic.main.fragment_today.*
-import kotlinx.android.synthetic.main.fragment_tomorrow.*
-import kotlinx.coroutines.*
 import org.json.JSONObject
-import java.net.URL
 import java.util.*
 import kotlin.collections.ArrayList
+import com.akvelon.weather.web.IWebRequestHandler as IWebRequestHandler1
 
 
-class MainActivity : FragmentActivity(), IWebRequestHandler {
+class MainActivity : FragmentActivity(), IWebRequestHandler1 {
     private val PAGE_COUNT = 3
     private val REQUEST_CODE = 1
     private var savedTabColor: String? = null
@@ -67,7 +46,6 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
     private lateinit var searchField: EditText
 
     private val weather = Weather(this)
-    private val location = Location(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -145,7 +123,7 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         }
 
         findViewById<ImageButton>(R.id.mylocation).setOnClickListener {
-            location.getCurrentPlaceId()
+            Location.getCurrentPlaceId(this)
         }
 
         val tabTitles = arrayOf(getString(R.string.Today), getString(R.string.Tomorrow), getString(R.string.Week))
@@ -158,19 +136,18 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
             Places.initialize(applicationContext, getString(R.string.PLACES_APP_KEY), Locale.US);
         }
 
-
-        val isAutolocationChecked = getPreferences(MODE_PRIVATE).getBoolean(getString(R.string.autolocation), true)
+        val isAutolocationChecked = getSharedPreferences("settings", MODE_PRIVATE).getBoolean(getString(R.string.autolocation), true)
         (navigationView.getHeaderView(0).findViewById<Switch>(R.id.autolocation)).apply {
             isChecked = isAutolocationChecked
                 setOnCheckedChangeListener { buttonView, isChecked ->
-                    getPreferences(MODE_PRIVATE).edit().putBoolean(getString(R.string.autolocation), isChecked).commit()
+                    getSharedPreferences("settings", MODE_PRIVATE).edit().putBoolean(getString(R.string.autolocation), isChecked).commit()
                 }
         }
 
         if(isAutolocationChecked) {
-            location.getCurrentPlaceId()
+            Location.getCurrentPlaceId(this)
         } else {
-            location.getCurrentPlace(getPreferences(MODE_PRIVATE).getString(getString(R.string.placeid), null))
+            Location.getCurrentPlace(this, getSharedPreferences("settings", MODE_PRIVATE).getString(getString(R.string.placeid), null))
         }
 
         setActiveButton()
@@ -189,7 +166,7 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         if(requestCode == REQUEST_CODE) {
             when(grantResults[0]) {
                 -1 -> Toast.makeText(this, R.string.update_error, Toast.LENGTH_SHORT).show()
-                else -> location.getCurrentPlaceId()
+                else -> Location.getCurrentPlaceId(this)
             }
         }
     }
@@ -215,7 +192,7 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
 
     override fun onGetPlaceIdRequestFinished(response: String?) {
         response?.let {
-            location.getCurrentPlace(it)
+            Location.getCurrentPlace(this, it)
         }
     }
 
@@ -225,12 +202,22 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
     }
 
     override fun onSearchPlaceStart(response: String) {
-        location.getCurrentPlace(response)
+        Location.getCurrentPlace(this, response)
+    }
+
+    override fun onFindAutocompletePredictionsFinished(response: MutableList<String>) {
+        val fragment = supportFragmentManager.findFragmentByTag(getString(R.string.SEARCH_FRAGMENT))
+        fragment?.let {
+            with(fragment as SearchFragment) {
+                setHints(response)
+                updateUI()
+            }
+        }
     }
 
     private fun createSearchFragment(showKeyboard: Boolean) {
         val transaction = supportFragmentManager.beginTransaction()
-        transaction.add(R.id.test_container, SearchFragment(showKeyboard))
+        transaction.add(R.id.test_container, SearchFragment(showKeyboard), getString(R.string.SEARCH_FRAGMENT))
         transaction.addToBackStack(null)
         transaction.commit()
     }
