@@ -81,7 +81,7 @@ class TodayFragment() : Fragment(), BaseFragment {
                     )
 
                     weatherTemperature.text = it.getString(3)
-                    weatherMain.text = it.getString(18)
+                    weatherMain.text = it.getString(17)
                     pressure.text = it.getString(5)
                     humidity.text = it.getString(6)
                     feelsLike.text = "Feels like ${it.getString(4)}°"
