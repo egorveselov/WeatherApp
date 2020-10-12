@@ -3,50 +3,31 @@ package com.akvelon.weather
 import android.Manifest
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
-import android.content.Context
-import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
-import android.location.Location
 import android.os.Bundle
-import android.view.MenuItem
 import android.view.WindowManager
-import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
-import androidx.fragment.app.FragmentManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.akvelon.weather.database.*
 import com.akvelon.weather.fragments.*
 import com.akvelon.weather.web.*
-import com.google.android.gms.common.api.Status
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
 import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.api.net.FetchPlaceRequest
-import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest
-import com.google.android.libraries.places.api.net.PlacesClient
-import com.google.android.libraries.places.widget.AutocompleteSupportFragment
-import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
-import kotlinx.android.synthetic.main.fragment_today.*
-import kotlinx.android.synthetic.main.fragment_tomorrow.*
 import org.json.JSONObject
 import java.util.*
 import kotlin.collections.ArrayList
+import com.akvelon.weather.web.IWebRequestHandler as IWebRequestHandler1
 
 
-class MainActivity : FragmentActivity(), IWebRequestHandler {
+class MainActivity : FragmentActivity(), IWebRequestHandler1 {
     private val PAGE_COUNT = 3
     private val REQUEST_CODE = 1
     private var savedTabColor: String? = null
@@ -63,6 +44,8 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
     private lateinit var celsius: Button
     private lateinit var fahrenheit: Button
     private lateinit var searchField: EditText
+
+    private val weather = Weather(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -117,21 +100,21 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         val navigationView = findViewById<NavigationView>(R.id.navView)
         celsius = navigationView.getHeaderView(0).findViewById(R.id.celsius)
         celsius.setOnClickListener {
-            saveUnits(getString(R.string.Metric), getString(R.string.MetricUnit), getString(R.string.WindSpeedMetricUnit))
+            weather.saveUnits(getString(R.string.Metric), getString(R.string.MetricUnit), getString(R.string.WindSpeedMetricUnit))
             setActiveButton()
-            WebRequest(this, getRequestString()).execute()
+            weather.execute()
         }
         fahrenheit = navigationView.getHeaderView(0).findViewById(R.id.fahrenheit)
         fahrenheit.setOnClickListener {
-            saveUnits(getString(R.string.Imperial), getString(R.string.ImperialUnit), getString(R.string.WindSpeedImperialUnit))
+            weather.saveUnits(getString(R.string.Imperial), getString(R.string.ImperialUnit), getString(R.string.WindSpeedImperialUnit))
             setActiveButton()
-            WebRequest(this, getRequestString()).execute()
+            weather.execute()
         }
 
         tabLayout = findViewById(R.id.tabLayout)
         swipeRefresh = findViewById(R.id.swipeRefresh)
         swipeRefresh.setOnRefreshListener {
-            WebRequest(this, getRequestString()).execute()
+            weather.execute()
         }
 
         hamburger = findViewById(R.id.hamburger)
@@ -140,7 +123,7 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         }
 
         findViewById<ImageButton>(R.id.mylocation).setOnClickListener {
-            getCurrentPlaceId()
+            Location.getCurrentPlaceId(this)
         }
 
         val tabTitles = arrayOf(getString(R.string.Today), getString(R.string.Tomorrow), getString(R.string.Week))
@@ -153,19 +136,18 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
             Places.initialize(applicationContext, getString(R.string.PLACES_APP_KEY), Locale.US);
         }
 
-
-        val isAutolocationChecked = getPreferences(MODE_PRIVATE).getBoolean(getString(R.string.autolocation), true)
+        val isAutolocationChecked = getSharedPreferences("settings", MODE_PRIVATE).getBoolean(getString(R.string.autolocation), true)
         (navigationView.getHeaderView(0).findViewById<Switch>(R.id.autolocation)).apply {
             isChecked = isAutolocationChecked
                 setOnCheckedChangeListener { buttonView, isChecked ->
-                    getPreferences(MODE_PRIVATE).edit().putBoolean(getString(R.string.autolocation), isChecked).commit()
+                    getSharedPreferences("settings", MODE_PRIVATE).edit().putBoolean(getString(R.string.autolocation), isChecked).commit()
                 }
         }
 
         if(isAutolocationChecked) {
-            getCurrentPlaceId()
+            Location.getCurrentPlaceId(this)
         } else {
-            getCurrentPlace(getPreferences(MODE_PRIVATE).getString(getString(R.string.placeid), null))
+            Location.getCurrentPlace(this, getSharedPreferences("settings", MODE_PRIVATE).getString(getString(R.string.placeid), null))
         }
 
         setActiveButton()
@@ -175,51 +157,18 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         }
     }
 
-    private fun createSearchFragment(showKeyboard: Boolean) {
-        val transaction = supportFragmentManager.beginTransaction()
-        transaction.add(R.id.test_container, SearchFragment(showKeyboard))
-        transaction.addToBackStack(null)
-        transaction.commit()
-    }
-
-    private fun setActiveButton() {
-        if(getTemperatureUnit() == getString(R.string.Metric)) {
-            celsius.background = fahrenheit.background
-            fahrenheit.background = null
-        } else {
-            fahrenheit.background = celsius.background
-            celsius.background = null
-        }
-    }
-
-    override fun onBackPressed() {
-        when {
-            needToBackPressed -> super.onBackPressed()
-            else -> needToBackPressed = true
-        }
-    }
-
-    inner class CustomFragmentStateAdapter(activity: FragmentActivity) :
-        FragmentStateAdapter(activity) {
-        override fun getItemCount(): Int = PAGE_COUNT
-
-        override fun createFragment(position: Int): Fragment {
-            when (position) {
-                0 -> fragmentList.add(TodayFragment.newInstance())
-                1 -> fragmentList.add(TomorrowFragment.newInstance())
-                2 -> fragmentList.add(WeekFragment.newInstance())
-                else -> throw IllegalStateException("Invalid adapter position")
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if(requestCode == REQUEST_CODE) {
+            when(grantResults[0]) {
+                -1 -> Toast.makeText(this, R.string.update_error, Toast.LENGTH_SHORT).show()
+                else -> Location.getCurrentPlaceId(this)
             }
-
-            return  fragmentList[position]
         }
-    }
-
-    private fun getRequestString(): String {
-        return "${String.format(getString(R.string.URL), 
-            getLocation(getString(R.string.Latitude)), 
-            getLocation(getString(R.string.Longitude)), 
-            getTemperatureUnit()) + getString(R.string.APP_ID)}"
     }
 
     override fun onRequestFinished(response: String?) {
@@ -241,9 +190,58 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         } ?: Toast.makeText(this, R.string.update_error, Toast.LENGTH_SHORT).show()
     }
 
+    override fun onGetPlaceIdRequestFinished(response: String?) {
+        response?.let {
+            Location.getCurrentPlace(this, it)
+        }
+    }
+
+    override fun onGetCurrentPlaceRequestFinished(response: String) {
+        searchField.setText(response)
+        weather.execute()
+    }
+
+    override fun onSearchPlaceStart(response: String) {
+        Location.getCurrentPlace(this, response)
+    }
+
+    override fun onFindAutocompletePredictionsFinished(response: MutableList<String>) {
+        val fragment = supportFragmentManager.findFragmentByTag(getString(R.string.SEARCH_FRAGMENT))
+        fragment?.let {
+            with(fragment as SearchFragment) {
+                setHints(response)
+                updateUI()
+            }
+        }
+    }
+
+    private fun createSearchFragment(showKeyboard: Boolean) {
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.add(R.id.test_container, SearchFragment(showKeyboard), getString(R.string.SEARCH_FRAGMENT))
+        transaction.addToBackStack(null)
+        transaction.commit()
+    }
+
     private fun updateFragments() {
         for (fragment in 0 until fragmentList.size) {
             (fragmentList[fragment] as BaseFragment).updateUI()
+        }
+    }
+
+    private fun setActiveButton() {
+        if(weather.getTemperatureUnit() == getString(R.string.Metric)) {
+            celsius.background = fahrenheit.background
+            fahrenheit.background = null
+        } else {
+            fahrenheit.background = celsius.background
+            celsius.background = null
+        }
+    }
+
+    override fun onBackPressed() {
+        when {
+            needToBackPressed -> super.onBackPressed()
+            else -> needToBackPressed = true
         }
     }
 
@@ -272,95 +270,24 @@ class MainActivity : FragmentActivity(), IWebRequestHandler {
         }
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if(requestCode == REQUEST_CODE) {
-            when(grantResults[0]) {
-                -1 -> Toast.makeText(this, R.string.update_error, Toast.LENGTH_SHORT).show()
-                else -> getCurrentPlaceId()
-            }
-        }
-    }
-
-    private fun saveLocation(lat: String, lon: String, city: String?, placeId: String) {
-        val sharedPreferences = getPreferences(MODE_PRIVATE)
-        with(sharedPreferences.edit()) {
-            putString(getString(R.string.Latitude), lat)
-            putString(getString(R.string.Longitude), lon)
-            putString(getString(R.string.City), city)
-            putString(getString(R.string.placeid), placeId)
-            commit()
-        }
-    }
-
-    private fun getLocation(parameter: String): String? {
-        val sharedPreferences = getPreferences(MODE_PRIVATE)
-        return when(parameter) {
-            getString(R.string.Latitude) -> sharedPreferences.getString(getString(R.string.Latitude), null)
-            getString(R.string.Longitude) -> sharedPreferences.getString(getString(R.string.Longitude), null)
-            getString(R.string.City) -> sharedPreferences.getString(getString(R.string.City), null)
-            else -> null
-        }
-    }
-
-    private fun saveUnits(unit: String, tempUnit: String, windSpeedUnit: String) {
-        val sharedPreferences = getPreferences(MODE_PRIVATE)
-        with(sharedPreferences.edit()) {
-            putString(getString(R.string.Unit), unit)
-            putString(getString(R.string.TempUnit), tempUnit)
-            putString(getString(R.string.WindSpeedUnit), windSpeedUnit)
-            commit()
-        }
-    }
-
-    private fun getTemperatureUnit(): String? = getPreferences(MODE_PRIVATE).getString(getString(R.string.Unit), getString(R.string.Metric))
-
-    private fun getCurrentPlaceId() {
-        val request = FindCurrentPlaceRequest.newInstance(listOf(Place.Field.ID))
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            val placeResponse = Places.createClient(this).findCurrentPlace(request)
-            placeResponse.addOnCompleteListener { task ->
-                if(task.isSuccessful) {
-                    task.result.placeLikelihoods[0].place.id?.let {
-                        getCurrentPlace(it)
-                    }
-                }
-            }
-        }
-    }
-
-    fun getCurrentPlace(id: String?) {
-        if(id == null) {
-            return
-        }
-        val request = FetchPlaceRequest.newInstance(id, listOf(Place.Field.ADDRESS_COMPONENTS, Place.Field.LAT_LNG))
-        val addressPlaceResponse = Places.createClient(this).fetchPlace(request)
-        addressPlaceResponse.addOnCompleteListener { task ->
-            if(task.isSuccessful) {
-                task.result.place.addressComponents?.asList()?.let {
-                    for(pos in 0 until it.size) {
-                        if(it[pos].types[0] == getString(R.string.locality)) {
-                            val city = it[pos].name
-                            task.result.place.latLng?.let { latLng ->
-                                val lat = latLng.latitude.toString()
-                                val lon = latLng.longitude.toString()
-                                saveLocation(lat, lon, city, id)
-                                searchField.setText(city)
-                                WebRequest(this, getRequestString()).execute()
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     fun closeSearch() {
         val fragments = supportFragmentManager.fragments
         supportFragmentManager.beginTransaction().remove(fragments.last()).commit()
+    }
+
+    inner class CustomFragmentStateAdapter(activity: FragmentActivity) :
+        FragmentStateAdapter(activity) {
+        override fun getItemCount(): Int = PAGE_COUNT
+
+        override fun createFragment(position: Int): Fragment {
+            when (position) {
+                0 -> fragmentList.add(TodayFragment.newInstance())
+                1 -> fragmentList.add(TomorrowFragment.newInstance())
+                2 -> fragmentList.add(WeekFragment.newInstance())
+                else -> throw IllegalStateException("Invalid adapter position")
+            }
+
+            return  fragmentList[position]
+        }
     }
 }

@@ -3,14 +3,12 @@ package com.akvelon.weather.fragments
 
 import android.content.Context
 import android.os.Bundle
-import android.view.Display
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentActivity
 import com.akvelon.weather.R
 import com.akvelon.weather.database.WeatherDBWorker
 import java.time.LocalDate
@@ -83,12 +81,12 @@ class TodayFragment() : Fragment(), BaseFragment {
                     )
 
                     weatherTemperature.text = it.getString(3)
-                    weatherMain.text = it.getString(18)
+                    weatherMain.text = it.getString(17)
                     pressure.text = it.getString(5)
                     humidity.text = it.getString(6)
                     feelsLike.text = "Feels like ${it.getString(4)}°"
-                    city.text = activity?.getPreferences(Context.MODE_PRIVATE)?.getString("city", "Moscow")
-                    tempUnit.text = activity?.getPreferences(Context.MODE_PRIVATE)?.getString(getString(R.string.TempUnit), getString(R.string.MetricUnit))
+                    city.text = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)?.getString("city", "Moscow")
+                    tempUnit.text = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)?.getString(getString(R.string.TempUnit), getString(R.string.MetricUnit))
                     break
                 }
             }

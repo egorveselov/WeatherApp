@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,26 +18,19 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.akvelon.weather.MainActivity
 import com.akvelon.weather.R
-import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.AutocompletePrediction
-import com.google.android.libraries.places.api.model.AutocompleteSessionToken
-import com.google.android.libraries.places.api.model.TypeFilter
-import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
-import com.google.android.libraries.places.api.net.FindAutocompletePredictionsResponse
-import kotlinx.android.synthetic.main.fragment_search.*
+import com.akvelon.weather.web.Location
 import kotlinx.android.synthetic.main.location_hint.view.*
 import java.lang.Exception
 
 
-class SearchFragment(private val showKeyboard: Boolean): Fragment() {
-    private val MAX_HINTS = 3
+class SearchFragment(private val showKeyboard: Boolean): Fragment(), BaseFragment {
     private lateinit var constraintLayout: ConstraintLayout
     private lateinit var searchField: EditText
     private lateinit var recyclerView: RecyclerView
     private lateinit var linearLayoutManager: LinearLayoutManager
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
     private lateinit var backButton: ImageButton
-    private var hintList = mutableListOf<AutocompletePrediction>()
+    private var hintList: MutableList<String> = mutableListOf()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -72,8 +64,7 @@ class SearchFragment(private val showKeyboard: Boolean): Fragment() {
                 if(actionId == EditorInfo.IME_ACTION_SEARCH) {
                     try {
                         val place = hintList[0]
-                        (activity as MainActivity).getCurrentPlace(place.placeId)
-
+                        Location.getCurrentPlace(context, Location.hintList[0].placeId)
                     } catch (e: Exception){}
                     finally {
                         constraintLayout.callOnClick()
@@ -100,10 +91,9 @@ class SearchFragment(private val showKeyboard: Boolean): Fragment() {
                     } else {
                         searchButton.setImageDrawable(resources.getDrawable(R.drawable.baseline_clear_black_24dp, null))
                     }
-                    getAutocompletePredictions(s)
+                    Location.getAutocompletePredictions(context, s)
                 }
             })
-
         }
 
         searchButton.setOnClickListener {
@@ -135,13 +125,13 @@ class SearchFragment(private val showKeyboard: Boolean): Fragment() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val card = holder.itemView as FrameLayout
-            card.place.text = hintList[position].getFullText(null)
+            card.place.text = hintList[position]
             if (position == hintList.count() - 1) {
                 card.hints_divider.background = null
             }
 
             card.setOnClickListener {
-                (activity as MainActivity).getCurrentPlace(hintList[position].placeId)
+                Location.getCurrentPlace(requireContext(), Location.hintList[position].placeId)
                 constraintLayout.callOnClick()
             }
         }
@@ -157,24 +147,11 @@ class SearchFragment(private val showKeyboard: Boolean): Fragment() {
         inputMethodManager?.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0)
     }
 
-    private fun getAutocompletePredictions(s: CharSequence) {
-        val token = AutocompleteSessionToken.newInstance()
-        val request = FindAutocompletePredictionsRequest.builder()
-            .setTypeFilter(TypeFilter.CITIES)
-            .setSessionToken(token)
-            .setQuery(s.toString())
-            .build()
+    fun setHints(hintList: MutableList<String>) {
+        this.hintList = hintList
+    }
 
-        Places.createClient(requireContext()).findAutocompletePredictions(request)
-            .addOnSuccessListener { response: FindAutocompletePredictionsResponse ->
-                val autocompletePredictionCount = response.autocompletePredictions.size
-                hintList = if(autocompletePredictionCount > MAX_HINTS) {
-                    response.autocompletePredictions.subList(0, MAX_HINTS)
-                } else {
-                    response.autocompletePredictions.subList(0, autocompletePredictionCount)
-                }
-
-                viewAdapter.notifyDataSetChanged()
-            }
+    override fun updateUI() {
+        viewAdapter.notifyDataSetChanged()
     }
 }
